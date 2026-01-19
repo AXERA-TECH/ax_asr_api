@@ -3,6 +3,11 @@ project(tests)
 
 set(CMAKE_CXX_STANDARD 17)
 
+# 日志水平
+if (LOG_LEVEL_DEBUG)
+    add_definitions("-D__LOG_LEVEL_DEBUG__")
+endif()
+
 # 查找所有测试文件
 file(GLOB TEST_SOURCES "*.cpp")
 

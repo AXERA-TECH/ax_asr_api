@@ -8,6 +8,7 @@ set(CMAKE_CXX_STANDARD 17)
 if (CMAKE_BUILD_TYPE MATCHES Debug)
     set(CMAKE_CXX_FLAGS "-fvisibility=hidden -g -O0")
     add_definitions("-D__DEBUG__")
+    add_definitions("-D__LOG_LEVEL_DEBUG__")
 elseif (CMAKE_BUILD_TYPE MATCHES Release)
     set(CMAKE_CXX_FLAGS "-fvisibility=hidden -O2")
 endif()
@@ -18,6 +19,7 @@ option(LOG_LEVEL_DEBUG "Print debug level logs" OFF)
 
 # 日志水平
 if (LOG_LEVEL_DEBUG)
+    message(STATUS "LOG_LEVEL: DEBUG")
     add_definitions("-D__LOG_LEVEL_DEBUG__")
 endif()
 

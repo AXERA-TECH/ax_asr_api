@@ -41,7 +41,7 @@ int AxModelRunner::load_model(const char* model_path, IO_BUFFER_STRATEGY_T strat
         ALOGE("model path %s not exist!", model_path);
         return -1;
     }
-    
+
     AX_CHAR *pModelBufferVirAddr = nullptr;
     AX_U32 nModelBufferSize = 0;
         
@@ -86,13 +86,12 @@ int AxModelRunner::load_model(const char* model_path, IO_BUFFER_STRATEGY_T strat
 int AxModelRunner::unload_model(void) {
     int ret = 0;
     if (m_handle != 0) {
+        ALOGD("Detroy engine handle");
         ret = AX_ENGINE_DestroyHandle(m_handle);
-        if (0 == ret)   
-            m_handle = 0;
+        m_handle = 0;
+
+        _free_io();
     }
-
-    _free_io();
-
     return ret;
 }
 
