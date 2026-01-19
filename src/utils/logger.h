@@ -32,7 +32,7 @@ typedef enum {
     AX_ASR_LOG_MAX
 } AX_ASR_LOG_LEVEL_E;
 
-#ifdef __DEBUG__
+#ifdef __LOG_LEVEL_DEBUG__
     static AX_ASR_LOG_LEVEL_E log_level = AX_ASR_LOG_DEBUG;
 #else
     static AX_ASR_LOG_LEVEL_E log_level = AX_ASR_LOG_INFO;

@@ -66,7 +66,7 @@ typedef struct _WhisperConfig {
     int n_text_layer, n_text_ctx, n_text_state;
     int n_vocab;
     int sot, eot;
-    int trtokenscribe, trtokenslate;
+    int transcribe, translate;
     int no_timestamps;
 } WhisperConfig;
 
@@ -120,7 +120,7 @@ public:
             return false;
         }
 
-        if (!load_config_(token_path)) {
+        if (!load_config_(config_path)) {
             return false;
         }
 
@@ -256,8 +256,8 @@ private:
         config_.sot = config["sot"];
         config_.eot = config["eot"];
         config_.no_timestamps = config["no_timestamps"];
-        config_.trtokenscribe = config["trtokenscribe"];
-        config_.trtokenslate = config["trtokenslate"];
+        config_.transcribe = config["transcribe"];
+        config_.translate = config["translate"];
         
         return true;
     }
@@ -271,7 +271,7 @@ private:
         int n_text_ctx = config_.n_text_ctx;
         int n_text_layer = config_.n_text_layer;
         
-        feature_.sot_seq = {config_.sot, 0, config_.trtokenscribe, config_.no_timestamps};
+        feature_.sot_seq = {config_.sot, 0, config_.transcribe, config_.no_timestamps};
         feature_.mel_bank.resize(config_.n_mels * WHISPER_FRAME_NUM);
         feature_.mask.resize(n_text_ctx);
         feature_.self_k_cache.resize(n_text_layer * n_text_ctx * n_text_state);

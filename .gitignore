@@ -3,3 +3,4 @@ ax620e_bsp_sdk
 build_*
 install
 .vscode
+models-*

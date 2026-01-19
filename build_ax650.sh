@@ -4,6 +4,7 @@ cmake ..  \
   -DCHIP_AX650=ON  \
   -DCMAKE_TOOLCHAIN_FILE=../toolchains/aarch64-none-linux-gnu.toolchain.cmake \
   -DCMAKE_INSTALL_PREFIX=../install/ax650 \
-  -DCMAKE_BUILD_TYPE=Release
+  -DCMAKE_BUILD_TYPE=Release  \
+  $1
 make -j4
 make install

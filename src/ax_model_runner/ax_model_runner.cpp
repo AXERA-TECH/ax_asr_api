@@ -37,6 +37,11 @@ AxModelRunner::~AxModelRunner() {
 }
 
 int AxModelRunner::load_model(const char* model_path, IO_BUFFER_STRATEGY_T strategy) {
+    if (!utils::file_exist(std::string(model_path))) {
+        ALOGE("model path %s not exist!", model_path);
+        return -1;
+    }
+    
     AX_CHAR *pModelBufferVirAddr = nullptr;
     AX_U32 nModelBufferSize = 0;
         

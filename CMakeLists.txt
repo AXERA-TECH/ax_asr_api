@@ -14,6 +14,12 @@ endif()
 
 # 编译选项
 option(BUILD_TESTS "Build unit tests from tests/" OFF)
+option(LOG_LEVEL_DEBUG "Print debug level logs" OFF)
+
+# 日志水平
+if (LOG_LEVEL_DEBUG)
+    add_definitions("-D__LOG_LEVEL_DEBUG__")
+endif()
 
 # 设置安装路径
 set(CMAKE_INSTALL_PREFIX "${CMAKE_SOURCE_DIR}/install" CACHE PATH "Installation prefix")
@@ -40,7 +46,6 @@ add_library(ax_asr_api SHARED src/api/ax_asr_api.cpp ${SRC})
 # 设置库属性
 set_target_properties(ax_asr_api PROPERTIES
     OUTPUT_NAME "ax_asr_api"
-    DEBUG_POSTFIX "d"
     PUBLIC_HEADER "src/api/ax_asr_api.h"
 )
 

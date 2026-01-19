@@ -12,20 +12,13 @@ extern "C" {
 #endif
 
 int main(int argc, char** argv) {
-    cmdline::parser cmd;
-    cmd.add<std::string>("wav", 'w', "wav file", true, "");
+    const char* wav_file = "./demo.wav";
 #if defined(CHIP_AX650)    
-    cmd.add<std::string>("model_path", 'p', "model path which contains whisper/ sensevoice/", false, "./models-ax650");
+    const char* model_path = "./models-ax650";
 #else
-    cmd.add<std::string>("model_path", 'p', "model path which contains whisper/ sensevoice/", false, "./models-ax630c");
-#endif
-    cmd.add<std::string>("language", 'l', "en, zh", false, "zh");
-    cmd.parse_check(argc, argv);
-
-    // 0. get app args, can be removed from user's app
-    auto wav_file = cmd.get<std::string>("wav");
-    auto model_path = cmd.get<std::string>("model_path");
-    auto language = cmd.get<std::string>("language");
+    const char* model_path = "./models-ax630c";
+#endif    
+    const char* language = "zh";
 
     AudioFile<float> audio_file;
     if (!audio_file.load(wav_file)) {
@@ -40,7 +33,7 @@ int main(int argc, char** argv) {
     Timer timer;
 
     timer.start();
-    AX_ASR_HANDLE handle = AX_ASR_Init(WHISPER_TINY, model_path.c_str());
+    AX_ASR_HANDLE handle = AX_ASR_Init(WHISPER_TINY, model_path);
     timer.stop();
 
     if (!handle) {
@@ -53,7 +46,7 @@ int main(int argc, char** argv) {
     // Run
     timer.start();
     char* result;
-    if (0 != AX_ASR_RunFile(handle, wav_file.c_str(), language.c_str(), &result)) {
+    if (0 != AX_ASR_RunFile(handle, wav_file, language, &result)) {
         printf("AX_ASR_RunFile failed!\n");
         AX_ASR_Uninit(handle);
         return -1;

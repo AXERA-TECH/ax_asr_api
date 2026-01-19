@@ -9,6 +9,8 @@
  **************************************************************************************************/
 #include "utils/memory_utils.hpp"
 
+namespace utils {
+
 bool file_exist(const std::string &path)
 {
     auto flag = false;
@@ -71,4 +73,6 @@ bool read_file(const std::string &path, char **data, size_t *len)
     fclose(fp);
 
     return true;
+}
+
 }

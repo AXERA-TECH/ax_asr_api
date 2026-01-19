@@ -10,6 +10,7 @@
 #include "api/ax_asr_api.h"
 #include "asr/asr_factory.hpp"
 #include "utils/logger.h"
+#include "utils/AudioFile.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -41,7 +42,7 @@ AX_ASR_API AX_ASR_HANDLE AX_ASR_Init(ASR_TYPE_E asr_type, const char* model_path
         ALOGE("model_path is NULL!");
         return NULL;
     }
-    
+
     ASRInterface* handle = ASRFactory::create(asr_type, std::string(model_path));
     if (!handle) {
         ALOGE("Create asr failed!");
@@ -86,6 +87,54 @@ AX_ASR_API int AX_ASR_RunFile(AX_ASR_HANDLE handle,
                    const char* wav_file, 
                    const char* language,
                    char** result) {
+    if (!handle) {
+        ALOGE("handle is NULL!");
+        return -1;
+    }    
+
+    if (!wav_file) {
+        ALOGE("wav_file is NULL!");
+        return -1;
+    }      
+    
+    if (!language) {
+        ALOGE("language is NULL!");
+        return -1;
+    }   
+    
+    if (!result) {
+        ALOGE("result is NULL!");
+        return -1;
+    } 
+
+    AudioFile<float> audio_file;
+    auto interface = static_cast<ASRInterface*>(handle);
+
+    *result = nullptr;
+
+    if (!audio_file.load(wav_file)) {
+        ALOGE("load wav failed!\n");
+        return -1;
+    }
+
+    auto& samples = audio_file.samples[0];
+    int n_samples = samples.size();
+    
+    // convert to mono
+    if (audio_file.isStereo()) {
+        for (int i = 0; i < n_samples; i++) {
+            samples[i] = (samples[i] + audio_file.samples[1][i]) / 2;
+        }
+    }
+    
+    std::string text;
+    if (!interface->run(samples, std::string(language), text)) {
+        printf("run whisper failed!\n");
+        return -1;
+    }
+
+    *result = strdup(text.c_str());
+
     return 0;                    
 }
 
