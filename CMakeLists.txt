@@ -32,15 +32,16 @@ link_directories(${MSP_LIB_DIR})
 aux_source_directory(src SRC)
 aux_source_directory(src/utils SRC)
 aux_source_directory(src/ax_model_runner SRC)
+aux_source_directory(src/asr SRC)
 
 # libax_asr_api.so - 共享库
-add_library(ax_asr_api SHARED src/api/ax_asr_api_api.cpp ${SRC})
+add_library(ax_asr_api SHARED src/api/ax_asr_api.cpp ${SRC})
 
 # 设置库属性
 set_target_properties(ax_asr_api PROPERTIES
     OUTPUT_NAME "ax_asr_api"
     DEBUG_POSTFIX "d"
-    PUBLIC_HEADER "src/api/ax_asr_api_api.h"
+    PUBLIC_HEADER "src/api/ax_asr_api.h"
 )
 
 # 链接依赖库到 ax_asr_api 库
@@ -78,7 +79,7 @@ install(TARGETS ax_asr_api
 )
 
 # 安装头文件（额外的安装方式，确保头文件被安装）
-install(FILES src/api/ax_asr_api_api.h
+install(FILES src/api/ax_asr_api.h
         DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 )
 

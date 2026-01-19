@@ -1,9 +1,12 @@
-/**
- * @file ax_asr_api.h
- * @brief AX asr API header - C-compatible interface for asr ASR system
- * @note This header provides a C interface to the asr speech recognition system
- */
-
+/**************************************************************************************************
+ *
+ * Copyright (c) 2019-2026 Axera Semiconductor (Ningbo) Co., Ltd. All Rights Reserved.
+ *
+ * This source file is the property of Axera Semiconductor (Ningbo) Co., Ltd. and
+ * may not be copied or distributed in any isomorphic form without the prior
+ * written consent of Axera Semiconductor (Ningbo) Co., Ltd.
+ *
+ **************************************************************************************************/
 #ifndef _AX_ASR_API_H_
 #define _AX_ASR_API_H_
 
@@ -37,27 +40,18 @@ typedef void* AX_ASR_HANDLE;
  * model type, model path, and language. This function loads the appropriate
  * models, configures the recognizer, and prepares it for speech recognition.
  * 
- * @param model_type Type of asr model to use (e.g., "tiny", "base", "small", "medium", "large")
- *                   or custom model identifier
+ * @param model_type Type of asr model to use
  * @param model_path Directory path where model files are stored
- *                   Model files are expected to be in the format:
- *                   - {model_path}/{model_type}/{model_type}-encoder.axmodel
- *                   - {model_path}/{model_type}/{model_type}-decoder.axmodel
- *                   - {model_path}/{model_type}/{model_type}-tokens.txt
- *                   - {model_path}/{model_type}/{model_type}_config.json
- * @param language Language code for recognition (e.g., "en", "zh", "ja", "ko")
- *                 Use "auto" for automatic language detection if supported
+ *                   Model files are expected to be in the format: *.axmodel
  * 
  * @return AX_ASR_HANDLE Opaque handle to the initialized asr context,
  *         or NULL if initialization fails
  * 
  * @note The caller is responsible for calling AX_ASR_Uninit() to free
  *       resources when the handle is no longer needed.
- * @note If language is not supported by the model, the function may fall back
- *       to a default language or return NULL.
  * @example
  *   // Initialize English recognition with base model
- *   AX_ASR_HANDLE handle = AX_ASR_Init("base", "../models-ax650", "en");
+ *   AX_ASR_HANDLE handle = AX_ASR_Init(WHISPER_TINY, "../models-ax650/tiny-encoder.axmodel");
  *   
  */
 AX_ASR_API AX_ASR_HANDLE AX_ASR_Init(ASR_TYPE_E asr_type, const char* model_path);

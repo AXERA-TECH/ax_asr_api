@@ -1,19 +1,19 @@
 /**************************************************************************************************
  *
- * Copyright (c) 2019-2025 Axera Semiconductor (Ningbo) Co., Ltd. All Rights Reserved.
+ * Copyright (c) 2019-2026 Axera Semiconductor (Ningbo) Co., Ltd. All Rights Reserved.
  *
  * This source file is the property of Axera Semiconductor (Ningbo) Co., Ltd. and
  * may not be copied or distributed in any isomorphic form without the prior
  * written consent of Axera Semiconductor (Ningbo) Co., Ltd.
  *
  **************************************************************************************************/
-
 #pragma once
-
-#include "ax_engine_api.h"
 
 #include <vector>
 #include <string>
+
+#include "ax_engine_api.h"
+#include "utils/ax_engine_guard.hpp"
 
 typedef enum _IO_BUFFER_STRATEGY_T {
     IO_BUFFER_STRATEGY_DEFAULT = 0,
@@ -77,4 +77,5 @@ private:
     std::vector<std::string> m_input_names;
     std::vector<std::string> m_output_names;
     bool m_loaded;
+    AxEngineGuard m_engine_guard;
 };

@@ -1,13 +1,12 @@
 /**************************************************************************************************
  *
- * Copyright (c) 2019-2023 Axera Semiconductor (Ningbo) Co., Ltd. All Rights Reserved.
+ * Copyright (c) 2019-2026 Axera Semiconductor (Ningbo) Co., Ltd. All Rights Reserved.
  *
  * This source file is the property of Axera Semiconductor (Ningbo) Co., Ltd. and
  * may not be copied or distributed in any isomorphic form without the prior
  * written consent of Axera Semiconductor (Ningbo) Co., Ltd.
  *
  **************************************************************************************************/
-
 #pragma once
 
 #include "ax_global_type.h"
@@ -33,7 +32,11 @@ typedef enum {
     AX_ASR_LOG_MAX
 } AX_ASR_LOG_LEVEL_E;
 
-static AX_ASR_LOG_LEVEL_E log_level = AX_ASR_LOG_INFO;
+#ifdef __DEBUG__
+    static AX_ASR_LOG_LEVEL_E log_level = AX_ASR_LOG_DEBUG;
+#else
+    static AX_ASR_LOG_LEVEL_E log_level = AX_ASR_LOG_INFO;
+#endif
 
 #if 1
 #define MACRO_BLACK "\033[1;30;30m"
