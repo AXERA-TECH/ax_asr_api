@@ -9,24 +9,20 @@
  **************************************************************************************************/
 #pragma once
 
+#include <memory>
+
 #include "asr/asr_interface.hpp"
-#include "utils/logger.h"
 
 class Sensevoice : public ASRInterface {
 public:
-    ~Sensevoice() {
-        ALOGI("Delete Sensevoice");
-    }
+    Sensevoice();
+    ~Sensevoice();
 
-    bool init(ASR_TYPE_E asr_type, const std::string& model_path) {
-        return true;
-    }
+    bool init(ASR_TYPE_E asr_type, const std::string& model_path);
+    void uninit(void);
+    bool run(const std::vector<float>& audio_data, const std::string& language, std::string& text_result);
 
-    void uninit(void) {
-
-    }
-
-    bool run(const std::vector<float>& audio_data, const std::string& language, std::string& text_result) {
-        return true;
-    }
+private:    
+    class Impl;
+    std::unique_ptr<Impl> impl_;    
 };

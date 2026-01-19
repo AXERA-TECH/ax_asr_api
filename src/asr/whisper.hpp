@@ -12,7 +12,6 @@
 #include <memory>
 
 #include "asr/asr_interface.hpp"
-#include "utils/logger.h"
 
 class Whisper : public ASRInterface {
 public:

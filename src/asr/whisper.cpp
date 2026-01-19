@@ -14,6 +14,7 @@
 #include <iterator>
 #include <vector>
 #include <limits>
+#include <memory>
 
 #include "asr/whisper.hpp"
 #include "api/ax_asr_api.h"
@@ -21,6 +22,7 @@
 #include "utils/nlohmann/json.hpp"
 #include "utils/librosa/librosa.h"
 #include "utils/base64.h"
+#include "utils/logger.h"
 
 using json = nlohmann::json;
 
@@ -82,7 +84,6 @@ typedef struct _WhisperFeature {
 
     std::vector<float> logits;
 } WhisperFeature;
-
 
 
 // pImpl

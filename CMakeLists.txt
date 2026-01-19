@@ -36,6 +36,10 @@ add_definitions(-DENV_HAS_POSIX_FILE_STAT)
 include_directories(${MSP_INC_DIR})
 link_directories(${MSP_LIB_DIR})
 
+# 第三方库
+include_directories(third_party/kaldi-native-fbank/include)
+link_directories(third_party/kaldi-native-fbank/lib)
+
 # Project sources
 aux_source_directory(src SRC)
 aux_source_directory(src/utils SRC)
@@ -52,7 +56,7 @@ set_target_properties(ax_asr_api PROPERTIES
 )
 
 # 链接依赖库到 ax_asr_api 库
-target_link_libraries(ax_asr_api PRIVATE ${MSP_LIBS})
+target_link_libraries(ax_asr_api PRIVATE ${MSP_LIBS} kaldi-native-fbank-core)
 
 # 设置包含目录
 target_include_directories(ax_asr_api
