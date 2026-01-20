@@ -38,7 +38,7 @@ link_directories(${MSP_LIB_DIR})
 
 # 第三方库
 include_directories(third_party/kaldi-native-fbank/include)
-link_directories(third_party/kaldi-native-fbank/lib)
+link_directories(third_party/kaldi-native-fbank/lib/${CMAKE_SYSTEM_PROCESSOR})
 list(APPEND KALDI_LIBS kaldi-native-fbank-core kissfft-float)
 
 # Project sources
