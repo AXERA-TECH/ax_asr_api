@@ -60,10 +60,17 @@ sudo apt install cmake build-essential
 
 #### 获取交叉编译器
 
+ - AX650/AX630C(aarch64)
 从[此处](https://developer.arm.com/-/media/Files/downloads/gnu-a/9.2-2019.12/binrel/gcc-arm-9.2-2019.12-x86_64-aarch64-none-linux-gnu.tar.xz)获取aarch64交叉编译器  
 将其添加到PATH:
 ```bash
 export PATH=$PATH:path of gcc-arm-9.2-2019.12-x86_64-aarch64-none-linux-gnu/bin
+```
+
+ - AX620Q(arm-uclibc-linux)
+从[此处](https://github.com/AXERA-TECH/ax620q_bsp_sdk/releases/download/v2.0.0/arm-AX620E-linux-uclibcgnueabihf_V3_20240320.tgz)获取
+```bash
+export PATH=$PATH:path of arm-AX620E-linux-uclibcgnueabihf/bin
 ```
 
 ### 获取BSP
