@@ -39,6 +39,7 @@ link_directories(${MSP_LIB_DIR})
 # 第三方库
 include_directories(third_party/kaldi-native-fbank/include)
 link_directories(third_party/kaldi-native-fbank/lib)
+list(APPEND KALDI_LIBS kaldi-native-fbank-core kissfft-float)
 
 # Project sources
 aux_source_directory(src SRC)
@@ -53,10 +54,11 @@ add_library(ax_asr_api SHARED src/api/ax_asr_api.cpp ${SRC})
 set_target_properties(ax_asr_api PROPERTIES
     OUTPUT_NAME "ax_asr_api"
     PUBLIC_HEADER "src/api/ax_asr_api.h"
+    POSITION_INDEPENDENT_CODE ON
 )
 
 # 链接依赖库到 ax_asr_api 库
-target_link_libraries(ax_asr_api PRIVATE ${MSP_LIBS} kaldi-native-fbank-core)
+target_link_libraries(ax_asr_api PRIVATE ${MSP_LIBS} ${KALDI_LIBS})
 
 # 设置包含目录
 target_include_directories(ax_asr_api
