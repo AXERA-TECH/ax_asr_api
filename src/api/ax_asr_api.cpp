@@ -117,6 +117,8 @@ AX_ASR_API int AX_ASR_RunFile(AX_ASR_HANDLE handle,
     auto& samples = audio_file.samples[0];
     int n_samples = samples.size();
     int sample_rate = audio_file.getSampleRate();
+
+    ALOGD("Audio info: sample_rate=%d, num_samples=%d, num_channels=%d", sample_rate, n_samples, audio_file.getNumChannels());
     
     // convert to mono
     if (audio_file.isStereo()) {
@@ -147,6 +149,17 @@ AX_ASR_API int AX_ASR_RunPCM(AX_ASR_HANDLE handle,
                    int sample_rate,
                    const char* language,
                    char** result) {
+    auto interface = static_cast<ASRInterface*>(handle);
+    std::vector<float> audio_data(pcm_data, pcm_data + num_samples);    
+    std::string text_result;
+    
+    if (!interface->run(audio_data, sample_rate, std::string(language), text_result)) {
+        ALOGE("RunPCM failed!");
+        return -1;
+    }
+
+    *result = strdup(text_result.c_str());
+
     return 0;
 }
 

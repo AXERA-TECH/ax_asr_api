@@ -4,6 +4,7 @@ C++ ASR API on Axera platforms
 支持平台:  
  - AX650
  - AX630C
+ - AX620Q
 
 支持模型:
  - Whisper-Tiny
@@ -75,6 +76,12 @@ bash download_bsp.sh
  ```
   编译完成后的产物在install/ax630c下
 
+ - AX620Q
+ ```bash
+ bash build_ax620q.sh
+ ```
+  编译完成后的产物在install/ax620q下
+
 ### 本地编译
 
 暂不支持
@@ -82,13 +89,13 @@ bash download_bsp.sh
 ### 其它编译选项
 
  - BUILD_TESTS  
- 负责编译tests目录下的单元测试，可执行程序生成在install/ax650或install/ax630c下
+ 负责编译tests目录下的单元测试，可执行程序生成在install/ax650或install/ax630c下  
  ```bash
  bash build_ax650.sh -DBUILD_TESTS=ON
  ```
 
   - LOG_LEVEL_DEBUG  
-  打印源码中的调试信息
+  打印源码中的调试信息  
   ```bash
   bash build_ax650.sh -DLOG_LEVEL_DEBUG=ON
   ```    
@@ -101,6 +108,7 @@ bash download_bsp.sh
 - test_whisper_base: 加载whisper base模型，打印demo.wav的识别结果
 - test_whisper_small: 加载whisper small模型，打印demo.wav的识别结果
 - test_whisper_turbo: 加载whisper turbo模型，打印demo.wav的识别结果
+- test_sensevoice: 加载sensevoice模型，打印demo.wav的识别结果
 
 
 ## 性能表现
@@ -116,6 +124,7 @@ WER(Word Error Rate)为词错误率，在私有数据集上测试
 | Whisper-Base  | 0.0668 | 0.3849 |
 | Whisper-Small | 0.2110 |        |
 | Whisper-Turbo | 0.4372 |        |
+| Sensevoice    | 0.0364 | 0.1170 |
 
  - WER
 
@@ -125,6 +134,7 @@ WER(Word Error Rate)为词错误率，在私有数据集上测试
 | Whisper-Base  |  0.18  |
 | Whisper-Small |  0.11  |
 | Whisper-Turbo |  0.06  |
+| Sensevoice    |  0.02  |
 
 ## 集成
 

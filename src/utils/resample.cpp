@@ -20,6 +20,7 @@
  * limitations under the License.
  */
 #include "utils/resample.h"
+#include "utils/logger.h"
 
 #include <cassert>
 #include <cmath>
@@ -305,8 +306,9 @@ void LinearResample::SetRemainder(const float *input, int32_t input_dim) {
 }
 
 std::vector<float> resample(const std::vector<float>& audio_data, int orig_sr, int target_sr) {
-    std::vector<float> resampled_data;
     if (orig_sr != target_sr) {
+        ALOGD("Audio resample: %d -> %d", orig_sr, target_sr);
+        std::vector<float> resampled_data;
         float min_freq = std::min<int32_t>(orig_sr, target_sr);
         float lowpass_cutoff = 0.99 * 0.5 * min_freq;
 
@@ -316,10 +318,10 @@ std::vector<float> resample(const std::vector<float>& audio_data, int orig_sr, i
             lowpass_filter_width);
 
         resampler->Resample(audio_data.data(), audio_data.size(), true, &resampled_data);
+        return resampled_data;
     } else {
-        resampled_data = audio_data;
+        return audio_data;
     }
-    return resampled_data;
 }
 
 }  // namespace utils

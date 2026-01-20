@@ -73,8 +73,13 @@ public:
     }
 
     bool run(const std::vector<float>& audio_data, int sample_rate, const std::string& language, std::string& text_result) {
+        // convert to uint16
+        std::vector<float> buf(audio_data.size());
+        for (int32_t i = 0; i != audio_data.size(); ++i) {
+            buf[i] = audio_data[i] * 32768;
+        }
         // resample 
-        auto resample_data = utils::resample(audio_data, sample_rate, sample_rate_);
+        auto resample_data = utils::resample(buf, sample_rate, sample_rate_);
 
         int language_token = lid_dict_[language];
 
@@ -84,6 +89,7 @@ public:
 
         int slice_len = max_seq_len_;
         int slice_num = static_cast<int>(std::ceil(feat_len * 1.0f / slice_len));
+        ALOGD("feat_len=%d slice_len=%d slice_num=%d", feat_len, slice_len, slice_num);
         
         std::vector<int> asr_res;
         int slice_start = 0;
@@ -99,6 +105,8 @@ public:
                 slice_start = i * slice_len - padding_;
                 slice_end = std::min((i + 1) * slice_len - padding_, feat_len);
             }
+
+            ALOGD("Slice %d: start=%d end=%d", i, slice_start, slice_end);
 
             actual_seq_len = slice_end - slice_start;
             std::fill(sub_feat_.begin(), sub_feat_.end(), 0.0f);
@@ -129,6 +137,7 @@ public:
 
         text_result.clear();
         text_result.reserve(256);
+        ALOGD("asr_res.size() = %u", asr_res.size());
         for (auto i : asr_res) {
             text_result.append(tokens_[i]);
         }
@@ -146,12 +155,12 @@ private:
         opts.frame_opts.frame_length_ms = 25;
         opts.frame_opts.remove_dc_offset = true;
         opts.frame_opts.window_type = "hamming";
+        opts.frame_opts.remove_dc_offset = true;
 
         opts.mel_opts.num_bins = n_mels_;
 
         opts.mel_opts.high_freq = 0;
-        // opts.mel_opts.low_freq = config.low_freq;
-
+        opts.mel_opts.low_freq = 20;
         opts.mel_opts.is_librosa = false;
 
         fbank_ = std::make_unique<knf::OnlineFbank>(opts);
@@ -180,27 +189,33 @@ private:
     }
 
     void preprocess_(const std::vector<float>& audio_data, bool normalize, std::vector<float>& features, int& num_frames) {
-        fbank_->AcceptWaveform(sample_rate_, audio_data.data(),
-                               audio_data.size());
+        fbank_->AcceptWaveform(sample_rate_, audio_data.data(), audio_data.size());
         fbank_->InputFinished();
 
-        num_frames = fbank_->NumFramesReady();
+        int32_t n = fbank_->NumFramesReady();
 
-        features.resize(num_frames * feature_dim_);
+        features.resize(n * n_mels_);
+
+        ALOGD("preprocess: normalize: %d", normalize);
+        ALOGD("preprocess: feature dim: %d %d", n, n_mels_);
 
         float *p = features.data();
 
-        for (int32_t i = 0; i != num_frames; ++i) {
+        for (int32_t i = 0; i < n; ++i) {
             const float *f = fbank_->GetFrame(i);
-            std::copy(f, f + feature_dim_, p);
-            p += feature_dim_;
+            std::copy(f, f + n_mels_, p);
+            p += n_mels_;
         }
 
         if (normalize)
-            normalize_features_(features.data(), num_frames, feature_dim_);
+            normalize_features_(features.data(), n, n_mels_);
 
         features = apply_lfr_(features);
         apply_cmvn_(&features);
+
+        feature_dim_ = n_mels_ * lfr_window_size_;
+        num_frames = features.size() / feature_dim_;
+        ALOGD("preprocess: final feature dim: %d %d", num_frames, feature_dim_);
     }
 
     void normalize_features_(float *p, int32_t num_frames,
@@ -263,6 +278,8 @@ private:
     }
 
     std::vector<int> postprocess_(const std::vector<float>& ctc_logits, int encoder_out_lens) {
+        ALOGD("postprocess: encoder_out_lens=%d", encoder_out_lens);
+
         std::vector<int> token_int;
         std::vector<int> yseq(encoder_out_lens - 4);
         for (int i = 4; i < encoder_out_lens; i++) {
@@ -272,7 +289,9 @@ private:
             yseq[i - 4] = std::distance(ctc_logits.begin() + i * vocab_size_, max_it);
         }
 
+        ALOGD("before unique_consecutive: yseq.size() = %u", yseq.size());
         unique_consecutive_(yseq);
+        ALOGD("after unique_consecutive: yseq.size() = %u", yseq.size());
 
         token_int.reserve(encoder_out_lens - 4);
         for (auto i : yseq) {
