@@ -17,6 +17,7 @@ extern "C" {
 #define AX_ASR_API __attribute__((visibility("default")))
 
 
+// Supported asr
 enum AX_ASR_TYPE_E {
     AX_WHISPER_TINY = 0,
     AX_WHISPER_BASE,
@@ -50,8 +51,8 @@ typedef void* AX_ASR_HANDLE;
  * @note The caller is responsible for calling AX_ASR_Uninit() to free
  *       resources when the handle is no longer needed.
  * @example
- *   // Initialize English recognition with base model
- *   AX_ASR_HANDLE handle = AX_ASR_Init(WHISPER_TINY, "../models-ax650/tiny-encoder.axmodel");
+ *   // Initialize recognition with whisper tiny model
+ *   AX_ASR_HANDLE handle = AX_ASR_Init(WHISPER_TINY, "./models-ax650/");
  *   
  */
 AX_ASR_API AX_ASR_HANDLE AX_ASR_Init(AX_ASR_TYPE_E asr_type, const char* model_path);
@@ -74,6 +75,9 @@ AX_ASR_API void AX_ASR_Uninit(AX_ASR_HANDLE handle);
  * 
  * @param handle asr context handle
  * @param wav_file Path to the input 16k pcmf32 WAV audio file
+ * @param language Preferred language, 
+ *      For whisper, check https://whisper-api.com/docs/languages/
+ *      For sensevoice, support auto, zh, en, yue, ja, ko
  * @param result Pointer to receive the allocated result string
  * 
  * @return int Status code (0 = success, <0 = error)
@@ -90,8 +94,13 @@ AX_ASR_API int AX_ASR_RunFile(AX_ASR_HANDLE handle,
  * @brief Perform speech recognition and return dynamically allocated string
  * 
  * @param handle asr context handle
- * @param pcm_data 16k Mono PCM f32 data, range from -1.0 to 1.0
+ * @param pcm_data 16k Mono PCM f32 data, range from -1.0 to 1.0,
+ *      will be resampled if not 16k
  * @param num_samples Sample num of PCM data
+ * @param sample_rate Sample rate of input audio
+ * @param language Preferred language, 
+ *      For whisper, check https://whisper-api.com/docs/languages/
+ *      For sensevoice, support auto, zh, en, yue, ja, ko
  * @param result Pointer to receive the allocated result string
  * 
  * @return int Status code (0 = success, <0 = error)
