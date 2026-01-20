@@ -53,7 +53,7 @@ public:
         }
         default:
             ALOGE("Unknown asr_type %d", asr_type);
-            break;
+            return nullptr;
         }
 
         if (!interface->init(asr_type, spec_model_path)) {
