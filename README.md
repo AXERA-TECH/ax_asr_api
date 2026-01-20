@@ -17,8 +17,6 @@ C++ ASR API on Axera platforms
 
 ## 快速开始
 
-预编译库:  
-
 使用示例:  
 ```cpp
 #include "ax_asr_api.h"
@@ -33,6 +31,18 @@ if (0 != AX_ASR_RunFile(handle, wav_file, language, &result)) {
 
 free(result);
 AX_ASR_Uninit(handle);
+```
+
+## 下载模型
+
+安装huggingface_hub
+```bash
+pip3 install -U huggingface_hub
+```
+
+运行下载脚本:
+```bash
+bash download_models.sh
 ```
 
 ## 编译
