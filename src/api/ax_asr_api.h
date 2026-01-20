@@ -17,12 +17,12 @@ extern "C" {
 #define AX_ASR_API __attribute__((visibility("default")))
 
 
-enum ASR_TYPE_E {
-    WHISPER_TINY = 0,
-    WHISPER_BASE,
-    WHISPER_SMALL,
-    WHISPER_TURBO,
-    SENSEVOICE
+enum AX_ASR_TYPE_E {
+    AX_WHISPER_TINY = 0,
+    AX_WHISPER_BASE,
+    AX_WHISPER_SMALL,
+    AX_WHISPER_TURBO,
+    AX_SENSEVOICE
 };
 
 /**
@@ -54,7 +54,7 @@ typedef void* AX_ASR_HANDLE;
  *   AX_ASR_HANDLE handle = AX_ASR_Init(WHISPER_TINY, "../models-ax650/tiny-encoder.axmodel");
  *   
  */
-AX_ASR_API AX_ASR_HANDLE AX_ASR_Init(ASR_TYPE_E asr_type, const char* model_path);
+AX_ASR_API AX_ASR_HANDLE AX_ASR_Init(AX_ASR_TYPE_E asr_type, const char* model_path);
 
 /**
  * @brief Deinitialize and release asr ASR resources
@@ -102,6 +102,7 @@ AX_ASR_API int AX_ASR_RunFile(AX_ASR_HANDLE handle,
 AX_ASR_API int AX_ASR_RunPCM(AX_ASR_HANDLE handle, 
                    float* pcm_data, 
                    int num_samples,
+                   int sample_rate,
                    const char* language,
                    char** result);                   
 

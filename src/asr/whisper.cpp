@@ -23,6 +23,7 @@
 #include "utils/librosa/librosa.h"
 #include "utils/base64.h"
 #include "utils/logger.h"
+#include "utils/resample.h"
 
 using json = nlohmann::json;
 
@@ -64,6 +65,7 @@ std::vector<T> stringToVector(const std::string& str) {
 }
 
 typedef struct _WhisperConfig {
+    int sample_rate;
     int n_mels;
     int n_text_layer, n_text_ctx, n_text_state;
     int n_vocab;
@@ -94,7 +96,7 @@ public:
         decoder_.unload_model();
     }
 
-    bool init(ASR_TYPE_E asr_type, const std::string& model_path) {
+    bool init(AX_ASR_TYPE_E asr_type, const std::string& model_path) {
         if (type_map_.find(asr_type) == type_map_.end()) {
             ALOGE("Cannot find corresponding model_type of asr_type(%d)", asr_type);
             return false;
@@ -145,8 +147,8 @@ public:
         decoder_.unload_model();
     }
 
-    bool run(const std::vector<float>& audio_data, const std::string& language, std::string& text_result) {
-        preprocess_(audio_data, config_.n_mels);
+    bool run(const std::vector<float>& audio_data, int sample_rate, const std::string& language, std::string& text_result) {
+        preprocess_(audio_data, sample_rate, config_.n_mels);
 
         feature_.sot_seq[1] = get_lang_token_(language);
 
@@ -249,6 +251,7 @@ private:
             lang_token_map_.insert(std::make_pair(lang_codes[i], lang_tokens[i]));
         }
 
+        config_.sample_rate = 16000;
         config_.n_mels = config["n_mels"];
         config_.n_vocab = config["n_vocab"];
         config_.n_text_layer = config["n_text_layer"];
@@ -282,10 +285,11 @@ private:
         feature_.logits.resize(config_.n_vocab);
     }
 
-    void preprocess_(const std::vector<float>& audio_data, int n_mels) {
-        std::vector<float> copied_audio_data(audio_data);
-        int n_samples = audio_data.size();
-        auto mel = librosa::Feature::melspectrogram(copied_audio_data, WHISPER_SAMPLE_RATE, WHISPER_N_FFT, WHISPER_HOP_LENGTH, "hann", true, "reflect", 2.0f, n_mels, 0.0f, WHISPER_SAMPLE_RATE / 2.0f);
+    void preprocess_(const std::vector<float>& audio_data, int sample_rate, int n_mels) {
+        std::vector<float> resampled_data = utils::resample(audio_data, sample_rate, config_.sample_rate);
+
+        int n_samples = resampled_data.size();
+        auto mel = librosa::Feature::melspectrogram(resampled_data, WHISPER_SAMPLE_RATE, WHISPER_N_FFT, WHISPER_HOP_LENGTH, "hann", true, "reflect", 2.0f, n_mels, 0.0f, WHISPER_SAMPLE_RATE / 2.0f);
         int n_mel = mel.size();
         int n_frames = mel[0].size();
 
@@ -412,11 +416,11 @@ private:
     std::map<std::string, int> lang_token_map_;
     WhisperConfig config_;
     WhisperFeature feature_;
-    std::map<ASR_TYPE_E, std::string> type_map_{
-        {WHISPER_TINY,  std::string("tiny")},
-        {WHISPER_BASE,  std::string("base")},
-        {WHISPER_SMALL, std::string("small")},
-        {WHISPER_TURBO, std::string("turbo")}
+    std::map<AX_ASR_TYPE_E, std::string> type_map_{
+        {AX_WHISPER_TINY,  std::string("tiny")},
+        {AX_WHISPER_BASE,  std::string("base")},
+        {AX_WHISPER_SMALL, std::string("small")},
+        {AX_WHISPER_TURBO, std::string("turbo")}
     };
 };
 
@@ -428,7 +432,7 @@ Whisper::Whisper():
 
 Whisper::~Whisper() = default;
 
-bool Whisper::init(ASR_TYPE_E asr_type, const std::string& model_path) {
+bool Whisper::init(AX_ASR_TYPE_E asr_type, const std::string& model_path) {
     return impl_->init(asr_type, model_path);
 }
 
@@ -436,6 +440,6 @@ void Whisper::uninit(void) {
     impl_->uninit();
 }
 
-bool Whisper::run(const std::vector<float>& audio_data, const std::string& language, std::string& text_result) {
-    return impl_->run(audio_data, language, text_result);
+bool Whisper::run(const std::vector<float>& audio_data, int sample_rate, const std::string& language, std::string& text_result) {
+    return impl_->run(audio_data, sample_rate, language, text_result);
 }

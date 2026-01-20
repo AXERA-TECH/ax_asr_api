@@ -33,7 +33,7 @@ int main(int argc, char** argv) {
     Timer timer;
 
     timer.start();
-    AX_ASR_HANDLE handle = AX_ASR_Init(WHISPER_TINY, model_path);
+    AX_ASR_HANDLE handle = AX_ASR_Init(AX_WHISPER_TINY, model_path);
     timer.stop();
 
     if (!handle) {

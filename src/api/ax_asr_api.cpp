@@ -37,7 +37,7 @@ extern "C" {
  *   AX_ASR_HANDLE handle = AX_ASR_Init(WHISPER_TINY, "../models-ax650/tiny_encoder.axmodel");
  *   
  */
-AX_ASR_API AX_ASR_HANDLE AX_ASR_Init(ASR_TYPE_E asr_type, const char* model_path) {
+AX_ASR_API AX_ASR_HANDLE AX_ASR_Init(AX_ASR_TYPE_E asr_type, const char* model_path) {
     if (!model_path) {
         ALOGE("model_path is NULL!");
         return NULL;
@@ -108,9 +108,6 @@ AX_ASR_API int AX_ASR_RunFile(AX_ASR_HANDLE handle,
     } 
 
     AudioFile<float> audio_file;
-    auto interface = static_cast<ASRInterface*>(handle);
-
-    *result = nullptr;
 
     if (!audio_file.load(wav_file)) {
         ALOGE("load wav failed!\n");
@@ -119,6 +116,7 @@ AX_ASR_API int AX_ASR_RunFile(AX_ASR_HANDLE handle,
 
     auto& samples = audio_file.samples[0];
     int n_samples = samples.size();
+    int sample_rate = audio_file.getSampleRate();
     
     // convert to mono
     if (audio_file.isStereo()) {
@@ -127,15 +125,7 @@ AX_ASR_API int AX_ASR_RunFile(AX_ASR_HANDLE handle,
         }
     }
     
-    std::string text;
-    if (!interface->run(samples, std::string(language), text)) {
-        printf("run whisper failed!\n");
-        return -1;
-    }
-
-    *result = strdup(text.c_str());
-
-    return 0;                    
+    return AX_ASR_RunPCM(handle, samples.data(), n_samples, sample_rate, language, result);
 }
 
 /**
@@ -154,6 +144,7 @@ AX_ASR_API int AX_ASR_RunFile(AX_ASR_HANDLE handle,
 AX_ASR_API int AX_ASR_RunPCM(AX_ASR_HANDLE handle, 
                    float* pcm_data, 
                    int num_samples,
+                   int sample_rate,
                    const char* language,
                    char** result) {
     return 0;

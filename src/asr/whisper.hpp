@@ -18,9 +18,9 @@ public:
     Whisper();
     ~Whisper();
 
-    bool init(ASR_TYPE_E asr_type, const std::string& model_path);
+    bool init(AX_ASR_TYPE_E asr_type, const std::string& model_path);
     void uninit(void);
-    bool run(const std::vector<float>& audio_data, const std::string& language, std::string& text_result);
+    bool run(const std::vector<float>& audio_data, int sample_rate, const std::string& language, std::string& text_result);
 
 private:    
     class Impl;

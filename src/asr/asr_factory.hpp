@@ -18,7 +18,7 @@
 
 class ASRFactory {
 public:
-    static ASRInterface* create(ASR_TYPE_E asr_type, const std::string& model_path) {
+    static ASRInterface* create(AX_ASR_TYPE_E asr_type, const std::string& model_path) {
         ASRInterface* interface = nullptr;
         
         std::string spec_model_path;
@@ -26,27 +26,27 @@ public:
 
         switch (asr_type)
         {
-        case WHISPER_TINY: {
+        case AX_WHISPER_TINY: {
             interface = new Whisper();
             spec_model_path = model_path + "/whisper/tiny/";
             break;
         }
-        case WHISPER_BASE: {
+        case AX_WHISPER_BASE: {
             interface = new Whisper();
             spec_model_path = model_path + "/whisper/base/";
             break;
         }
-        case WHISPER_SMALL: {
+        case AX_WHISPER_SMALL: {
             interface = new Whisper();
             spec_model_path = model_path + "/whisper/small/";
             break;
         }
-        case WHISPER_TURBO: {
+        case AX_WHISPER_TURBO: {
             interface = new Whisper();
             spec_model_path = model_path + "/whisper/turbo/";
             break;
         }
-        case SENSEVOICE: {
+        case AX_SENSEVOICE: {
             interface = new Sensevoice();
             spec_model_path = model_path + "/sensevoice/";
             break;

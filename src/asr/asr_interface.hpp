@@ -16,7 +16,7 @@
 class ASRInterface {
 public:
     virtual ~ASRInterface() {}
-    virtual bool init(ASR_TYPE_E asr_type, const std::string& model_path) = 0;
+    virtual bool init(AX_ASR_TYPE_E asr_type, const std::string& model_path) = 0;
     virtual void uninit(void) = 0;
-    virtual bool run(const std::vector<float>& audio_data, const std::string& language, std::string& text_result) = 0;
+    virtual bool run(const std::vector<float>& audio_data, int sample_rate, const std::string& language, std::string& text_result) = 0;
 };
