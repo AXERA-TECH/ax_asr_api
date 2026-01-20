@@ -38,7 +38,7 @@ link_directories(${MSP_LIB_DIR})
 
 # 第三方库
 include_directories(third_party/kaldi-native-fbank/include)
-link_directories(third_party/kaldi-native-fbank/lib)
+link_directories(third_party/kaldi-native-fbank/lib/${CMAKE_SYSTEM_PROCESSOR})
 
 # Project sources
 aux_source_directory(src SRC)
