@@ -133,7 +133,7 @@ bash download_bsp.sh
 主程序:  
 
 ```
-./install/ax650/main -w demo.wav -t whisper_tiny -p ./models-ax650/whisper -l zh
+./install/ax650/main -a demo.wav -t whisper_tiny -p ./models-ax650/whisper -l zh
 ```
 
 以下为tests下单元测试的使用示例和说明:
