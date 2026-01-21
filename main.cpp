@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <map>
 #include "utils/cmdline.hpp"
 #include "utils/timer.hpp"
 #include "utils/AudioFile.h"
@@ -11,21 +12,38 @@ extern "C" {
 }
 #endif
 
+static std::map<std::string, AX_ASR_TYPE_E>     model_type_map = {
+    {"whisper_tiny", AX_WHISPER_TINY},
+    {"whisper_base", AX_WHISPER_BASE},
+    {"whisper_small", AX_WHISPER_SMALL},
+    {"whisper_turbo", AX_WHISPER_TURBO},
+    {"sensevoice", AX_SENSEVOICE}
+};
+
 int main(int argc, char** argv) {
     cmdline::parser cmd;
     cmd.add<std::string>("wav", 'w', "wav file", true, "");
+    cmd.add<std::string>("model_type", 't', "Choose from whisper_tiny, whisper_base, whisper_small, whisper_turbo, sensevoice", true, "");
 #if defined(CHIP_AX650)    
-    cmd.add<std::string>("model_path", 'p', "model path which contains whisper/ sensevoice/", false, "./models-ax650");
+    cmd.add<std::string>("model_path", 'p', "model path which contains whisper/ sensevoice/", true, "");
 #else
-    cmd.add<std::string>("model_path", 'p', "model path which contains whisper/ sensevoice/", false, "./models-ax630c");
+    cmd.add<std::string>("model_path", 'p', "model path which contains whisper/ sensevoice/", true, "");
 #endif
     cmd.add<std::string>("language", 'l', "en, zh", false, "zh");
     cmd.parse_check(argc, argv);
 
     // 0. get app args, can be removed from user's app
     auto wav_file = cmd.get<std::string>("wav");
+    auto model_type_key = cmd.get<std::string>("model_type");
     auto model_path = cmd.get<std::string>("model_path");
     auto language = cmd.get<std::string>("language");
+
+    if (model_type_map.find(model_type_key) == model_type_map.end()) {
+        fprintf(stderr, "Cannot find model_type: %s, please check help", model_type_key.c_str());
+        return -1;
+    }
+
+    auto model_type = model_type_map[model_type_key];
 
     AudioFile<float> audio_file;
     if (!audio_file.load(wav_file)) {
@@ -40,7 +58,7 @@ int main(int argc, char** argv) {
     Timer timer;
 
     timer.start();
-    AX_ASR_HANDLE handle = AX_ASR_Init(AX_WHISPER_TINY, model_path.c_str());
+    AX_ASR_HANDLE handle = AX_ASR_Init(model_type, model_path.c_str());
     timer.stop();
 
     if (!handle) {
@@ -48,7 +66,7 @@ int main(int argc, char** argv) {
         return -1;
     }
 
-    printf("Init asr success, take %.4fseconds\n", timer.elapsed<std::chrono::seconds>());
+    printf("Init asr: %s success, take %.4fseconds\n", model_type_key.c_str(), timer.elapsed<std::chrono::seconds>());
 
     // Run
     timer.start();

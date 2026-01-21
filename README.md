@@ -130,6 +130,12 @@ bash download_bsp.sh
 
 ## 测试
 
+主程序:  
+
+```
+./install/ax650/main -w demo.wav -t whisper_tiny -p ./models-ax650/whisper -l zh
+```
+
 以下为tests下单元测试的使用示例和说明:
 
 - test_whisper_tiny: 加载whisper tiny模型，打印demo.wav的识别结果
