@@ -29,6 +29,9 @@ set(CMAKE_INSTALL_LIBDIR "lib")
 set(CMAKE_INSTALL_INCLUDEDIR "include")
 set(CMAKE_INSTALL_BINDIR ".")
 
+# NEON
+include(cmake/detect_neon.cmake)
+
 # Axera BSP
 include(cmake/msp_dependencies.cmake)
 add_definitions(-DENV_HAS_STD_FILESYSTEM)
@@ -73,7 +76,11 @@ target_include_directories(ax_asr_api
 )
 
 # main executable - 依赖于 ax_asr_api 库
-add_executable(main main.cpp)
+list(APPEND EXTRA_SRCS
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/utils/AudioLoader.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/utils/resample.cpp)
+
+add_executable(main main.cpp ${EXTRA_SRCS})
 target_include_directories(main PRIVATE src)
 target_link_libraries(main PUBLIC ax_asr_api PRIVATE ${MSP_LIBS})
 

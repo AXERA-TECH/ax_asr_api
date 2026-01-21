@@ -18,6 +18,7 @@ public:
     Whisper();
     ~Whisper();
 
+    int sample_rate() { return 16000; }
     bool init(AX_ASR_TYPE_E asr_type, const std::string& model_path);
     void uninit(void);
     bool run(const std::vector<float>& audio_data, int sample_rate, const std::string& language, std::string& text_result);

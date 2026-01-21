@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include "utils/cmdline.hpp"
 #include "utils/timer.hpp"
-#include "utils/AudioFile.h"
+#include "utils/AudioLoader.hpp"
 
 #ifdef __cplusplus
 extern "C" {
@@ -13,7 +13,7 @@ extern "C" {
 
 int main(int argc, char** argv) {
     cmdline::parser cmd;
-    cmd.add<std::string>("wav", 'w', "wav file", true, "");
+    cmd.add<std::string>("audio", 'a', "audio file, support wav and mp3", true, "");
 #if defined(CHIP_AX650)    
     cmd.add<std::string>("model_path", 'p', "model path which contains axmodel", false, "./models-ax650/sensevoice");
 #else
@@ -22,18 +22,17 @@ int main(int argc, char** argv) {
     cmd.add<std::string>("language", 'l', "auto, en, zh, yue, ja, ko", false, "zh");
     cmd.parse_check(argc, argv);
 
-    auto wav_file = cmd.get<std::string>("wav");
+    auto audio_file = cmd.get<std::string>("audio");
     auto model_path = cmd.get<std::string>("model_path");
     auto language = cmd.get<std::string>("language");
 
-    AudioFile<float> audio_file;
-    if (!audio_file.load(wav_file)) {
-        printf("load wav failed!\n");
+    utils::AudioLoader audio_loader;
+    if (!audio_loader.load(audio_file)) {
+        printf("load audio failed!\n");
         return -1;
     }
 
-    auto& samples = audio_file.samples[0];
-    int n_samples = samples.size();
+    int n_samples = audio_loader.get_num_samples();
     float duration = n_samples * 1.f / 16000;
 
     Timer timer;
@@ -52,7 +51,7 @@ int main(int argc, char** argv) {
     // Run
     timer.start();
     char* result;
-    if (0 != AX_ASR_RunFile(handle, wav_file.c_str(), language.c_str(), &result)) {
+    if (0 != AX_ASR_RunFile(handle, audio_file.c_str(), language.c_str(), &result)) {
         printf("AX_ASR_RunFile failed!\n");
         AX_ASR_Uninit(handle);
         return -1;

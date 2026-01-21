@@ -10,7 +10,9 @@
 #include "api/ax_asr_api.h"
 #include "asr/asr_factory.hpp"
 #include "utils/logger.h"
-#include "utils/AudioFile.h"
+#include "utils/AudioLoader.hpp"
+
+#include <string.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -110,25 +112,17 @@ AX_ASR_API int AX_ASR_RunFile(AX_ASR_HANDLE handle,
         return -1;
     } 
 
-    AudioFile<float> audio_file;
+    utils::AudioLoader audio_loader;
+    auto interface = static_cast<ASRInterface*>(handle);
 
-    if (!audio_file.load(wav_file)) {
+    if (!audio_loader.load(wav_file, interface->sample_rate())) {
         ALOGE("load wav failed!\n");
         return -1;
     }
 
-    auto& samples = audio_file.samples[0];
+    auto& samples = audio_loader.samples;
     int n_samples = samples.size();
-    int sample_rate = audio_file.getSampleRate();
-
-    ALOGD("Audio info: sample_rate=%d, num_samples=%d, num_channels=%d", sample_rate, n_samples, audio_file.getNumChannels());
-    
-    // convert to mono
-    if (audio_file.isStereo()) {
-        for (int i = 0; i < n_samples; i++) {
-            samples[i] = (samples[i] + audio_file.samples[1][i]) / 2;
-        }
-    }
+    int sample_rate = audio_loader.get_sample_rate();
     
     return AX_ASR_RunPCM(handle, samples.data(), n_samples, sample_rate, language, result);
 }
