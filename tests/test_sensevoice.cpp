@@ -14,7 +14,7 @@ extern "C" {
 int main(int argc, char** argv) {
     cmdline::parser cmd;
     cmd.add<std::string>("audio", 'a', "audio file, support wav and mp3", true, "");
-#if defined(CHIP_AX650)    
+#if defined(CHIP_AX650) || defined(CHIP_AX8850)
     cmd.add<std::string>("model_path", 'p', "model path which contains axmodel", false, "./models-ax650/sensevoice");
 #else
     cmd.add<std::string>("model_path", 'p', "model path which contains axmodel", false, "./models-ax630c/sensevoice");

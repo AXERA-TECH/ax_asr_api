@@ -7,7 +7,9 @@
  * written consent of Axera Semiconductor (Ningbo) Co., Ltd.
  *
  **************************************************************************************************/
-#include "utils/ax_engine_guard.hpp"
+#if defined (CHIP_AX650) || defined(CHIP_AX630C) || defined(CHIP_AX620Q)
+
+#include "ax_model_runner/ax_engine_guard.hpp"
 
 #include <cstring>
 #include <stdlib.h>
@@ -22,8 +24,7 @@ AxEngineGuard::AxEngineGuard() {
   if (count_ == 0) {
     auto ret = AX_SYS_Init();
     if (ret != 0) {
-      ALOGE("Failed to call AX_SYS_Init. ret code: %d",
-                       static_cast<int32_t>(ret));
+      ALOGE("Failed to call AX_SYS_Init. ret code: 0x%x", ret);
 
       exit(-1);
     }
@@ -34,8 +35,7 @@ AxEngineGuard::AxEngineGuard() {
     ret = AX_ENGINE_Init(&npu_attr);
 
     if (ret != 0) {
-      ALOGE("Failed to call AX_ENGINE_Init. ret code: %d",
-                       static_cast<int32_t>(ret));
+      ALOGE("Failed to call AX_ENGINE_Init. ret code: 0x%x", ret);
 
       exit(-1);
     }
@@ -51,3 +51,5 @@ AxEngineGuard::~AxEngineGuard() {
     AX_SYS_Deinit();
   }
 }
+
+#endif
