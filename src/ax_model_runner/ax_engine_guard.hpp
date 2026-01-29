@@ -7,6 +7,8 @@
  * written consent of Axera Semiconductor (Ningbo) Co., Ltd.
  *
  **************************************************************************************************/
+#if defined (CHIP_AX650) || defined(CHIP_AX630C) || defined(CHIP_AX620Q)
+
 #pragma once
 #include <cstdint>
 
@@ -24,3 +26,5 @@ public:
 private:
     static thread_local int32_t count_;
 };
+
+#endif

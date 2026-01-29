@@ -149,6 +149,7 @@ public:
 
     bool run(const std::vector<float>& audio_data, int sample_rate, const std::string& language, std::string& text_result) {
         preprocess_(audio_data, sample_rate, config_.n_mels);
+        ALOGD("preprocess finish");
 
         feature_.sot_seq[1] = get_lang_token_(language);
 
@@ -158,6 +159,7 @@ public:
             ALOGE("encoder run failed! ret=0x%x", ret);
             return false;
         }
+        ALOGD("run encoder finish");
 
         // copy cross_kv once
         dma_cross_kv_();
@@ -178,6 +180,7 @@ public:
         for (auto token : feature_.sot_seq) {
             idx = run_decoder_(token, offset++);
         }
+        ALOGD("run decoder sot finish");
 
         while (idx != config_.eot && offset < config_.n_text_ctx) {
             tokens.push_back(idx);

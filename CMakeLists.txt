@@ -61,7 +61,7 @@ set_target_properties(ax_asr_api PROPERTIES
 )
 
 # 链接依赖库到 ax_asr_api 库
-target_link_libraries(ax_asr_api PRIVATE ${MSP_LIBS} ${KALDI_LIBS})
+target_link_libraries(ax_asr_api PRIVATE ${MSP_LIBS} ${KALDI_LIBS} pthread dl)
 
 # 设置包含目录
 target_include_directories(ax_asr_api
@@ -82,7 +82,7 @@ list(APPEND EXTRA_SRCS
 
 add_executable(main main.cpp ${EXTRA_SRCS})
 target_include_directories(main PRIVATE src)
-target_link_libraries(main PUBLIC ax_asr_api PRIVATE ${MSP_LIBS})
+target_link_libraries(main PUBLIC ax_asr_api ${MSP_LIBS})
 
 # 单元测试
 if (BUILD_TESTS)
