@@ -122,6 +122,9 @@ public:
             sample_rate_ = info.hz;
         }
 
+        // free
+        free((void*)info.buffer);
+
         return true;
     }
 

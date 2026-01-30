@@ -16,6 +16,7 @@ endif()
 # 编译选项
 option(BUILD_TESTS "Build unit tests from tests/" OFF)
 option(LOG_LEVEL_DEBUG "Print debug level logs" OFF)
+option(BUILD_SERVER "Build server from src/server" ON)
 
 # 日志水平
 if (LOG_LEVEL_DEBUG)
@@ -87,6 +88,11 @@ target_link_libraries(main PUBLIC ax_asr_api ${MSP_LIBS})
 # 单元测试
 if (BUILD_TESTS)
     add_subdirectory(tests)
+endif()
+
+# 服务端
+if (BUILD_SERVER)
+    add_subdirectory(server)
 endif()
 
 # 安装 ax_asr_api 库和头文件

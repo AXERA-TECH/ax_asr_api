@@ -24,10 +24,10 @@ int main(int argc, char** argv) {
     cmdline::parser cmd;
     cmd.add<std::string>("audio", 'a', "audio file, support wav and mp3", true, "");
     cmd.add<std::string>("model_type", 't', "Choose from whisper_tiny, whisper_base, whisper_small, whisper_turbo, sensevoice", true, "");
-#if defined(CHIP_AX650)    
-    cmd.add<std::string>("model_path", 'p', "model path which contains whisper/ sensevoice/", true, "");
+#if defined(CHIP_AX650) || defined(CHIP_AX8850)
+    cmd.add<std::string>("model_path", 'p', "model path which contains axmodel", false, "./models-ax650");
 #else
-    cmd.add<std::string>("model_path", 'p', "model path which contains whisper/ sensevoice/", true, "");
+    cmd.add<std::string>("model_path", 'p', "model path which contains axmodel", false, "./models-ax630c");
 #endif
     cmd.add<std::string>("language", 'l', "en, zh", false, "zh");
     cmd.parse_check(argc, argv);

@@ -5,6 +5,7 @@ C++ ASR API on Axera platforms
  - AX650
  - AX630C
  - AX620Q
+ - AX8850
 
 支持模型:
  - Whisper-Tiny
@@ -110,31 +111,88 @@ bash download_bsp.sh
  ```
   编译完成后的产物在install/ax620q下
 
+ - AX8850
+ ```bash
+ bash build_ax8850_aarch64.sh.sh
+ ```
+  编译完成后的产物在install/ax8850_aarch64下
+
 ### 本地编译
 
 暂不支持
 
 ### 其它编译选项
 
- - BUILD_TESTS  
+ - BUILD_TESTS 默认OFF  
  负责编译tests目录下的单元测试，可执行程序生成在install/ax650或install/ax630c下  
  ```bash
  bash build_ax650.sh -DBUILD_TESTS=ON
  ```
 
-  - LOG_LEVEL_DEBUG  
+  - LOG_LEVEL_DEBUG 默认OFF  
   打印源码中的调试信息  
   ```bash
   bash build_ax650.sh -DLOG_LEVEL_DEBUG=ON
   ```    
 
+  - BUILD_SERVER 默认ON   
+  编译asr_server  
+  ```bash
+  bash build_ax650.sh -DBUILD_SERVER=ON
+  ```    
+
 ## 测试
 
-主程序:  
+### 主程序  
 
 ```
 ./install/ax650/main -a demo.wav -t whisper_tiny -p ./models-ax650/whisper -l zh
 ```
+
+Usage:  
+```
+./install/ax8850_aarch64/main --help
+usage: ./install/ax8850_aarch64/main --audio=string --model_type=string [options] ...
+options:
+  -a, --audio         audio file, support wav and mp3 (string)
+  -t, --model_type    Choose from whisper_tiny, whisper_base, whisper_small, whisper_turbo, sensevoice (string)
+  -p, --model_path    model path which contains axmodel (string [=./models-ax650])
+  -l, --language      en, zh (string [=zh])
+  -?, --help          print this message
+
+```
+
+### 服务端(asr_server)
+
+```
+./install/ax8850_aarch64/asr_server --port 8080
+
+```
+
+Usage:  
+```
+./install/ax8850_aarch64/asr_server --help
+usage: ./install/ax8850_aarch64/asr_server [options] ...
+options:
+  -p, --port          On which port to run the server (int [=8080])
+  -m, --model_path    model path which contains axmodel (string [=./models-ax650])
+  -?, --help          print this message
+
+```
+
+### 客户端
+
+#### Python
+
+```
+cd scripts
+pip install openai
+python test_asr_server.py --ip 10.126.33.146 --port 8080 --audio ../demo.wav -m sensevoice -l zh
+```
+Check python test_asr_server.py --help for help.  
+
+
+### 单元测试
 
 以下为tests下单元测试的使用示例和说明:
 

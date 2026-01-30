@@ -28,27 +28,27 @@ public:
         {
         case AX_WHISPER_TINY: {
             interface = new Whisper();
-            spec_model_path = model_path + "/tiny/";
+            spec_model_path = model_path + "/whisper/tiny/";
             break;
         }
         case AX_WHISPER_BASE: {
             interface = new Whisper();
-            spec_model_path = model_path + "/base/";
+            spec_model_path = model_path + "/whisper/base/";
             break;
         }
         case AX_WHISPER_SMALL: {
             interface = new Whisper();
-            spec_model_path = model_path + "/small/";
+            spec_model_path = model_path + "/whisper/small/";
             break;
         }
         case AX_WHISPER_TURBO: {
             interface = new Whisper();
-            spec_model_path = model_path + "/turbo/";
+            spec_model_path = model_path + "/whisper/turbo/";
             break;
         }
         case AX_SENSEVOICE: {
             interface = new Sensevoice();
-            spec_model_path = model_path;
+            spec_model_path = model_path + "/sensevoice/";
             break;
         }
         default:
