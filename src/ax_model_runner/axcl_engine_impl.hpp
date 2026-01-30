@@ -183,7 +183,7 @@ public:
             return -1;
         }
 
-        axclrtMemcpy(inputs_[index], data, inputs_size_[index], AXCL_MEMCPY_DEVICE_TO_DEVICE);
+        axclrtMemcpy(inputs_[index], data, inputs_size_[index], AXCL_MEMCPY_HOST_TO_DEVICE);
 
         return 0;
     }
@@ -205,11 +205,31 @@ public:
         return 0;
     }
 
+    int set_input_dma(int dst_index, AxModelRunner& src_model, int src_index) {
+        int ret = axclrtMemcpy(this->inputs_[dst_index], src_model.get_output_ptr(src_index), this->inputs_size_[dst_index], AXCL_MEMCPY_DEVICE_TO_DEVICE);
+        if (0 != ret) {
+            ALOGW("memcpy d2d from %d to %d failed! ret=0x%08x, fallback to normal memcpy", src_index, dst_index, ret);
+            std::vector<char> data(src_model.get_output_size(src_index));
+            ret = src_model.get_output(src_index, data.data());
+            if (0 != ret) {
+                ALOGE("get_output(%d) of src_model failed! ret=0x%08x", src_index, ret);
+                return ret;
+            }
+
+            ret = this->set_input(dst_index, data.data());
+            if (0 != ret) {
+                ALOGE("set_input(%d) failed! ret=0x%08x", dst_index, ret);
+                return ret;
+            }
+        }
+        return 0;
+    }
+
     int get_output(int index, void* data) {
         if (m_strategy == AX_IO_BUFFER_STRATEGY_CACHED)
             axclrtMemFlush(outputs_[index], outputs_size_[index]);
 
-        axclrtMemcpy(data, outputs_[index], outputs_size_[index], AXCL_MEMCPY_DEVICE_TO_DEVICE);
+        axclrtMemcpy(data, outputs_[index], outputs_size_[index], AXCL_MEMCPY_DEVICE_TO_HOST);
 
         return 0;
     }

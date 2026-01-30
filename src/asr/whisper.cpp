@@ -27,10 +27,6 @@
 
 using json = nlohmann::json;
 
-#if defined(CHIP_AX650)
-    #include "ax_dmadim_api.h"
-#endif
-
 #define WHISPER_SAMPLE_RATE 16000
 #define WHISPER_N_FFT       400
 #define WHISPER_HOP_LENGTH  160
@@ -324,26 +320,11 @@ private:
         // decoder input:
         // tokens, self_k, self_v, cross_k, cross_v, offset, mask
 
-        const int n_text_layer = config_.n_text_layer;
         int cross_kv_num = 2;
         int decoder_start_index = 3;
 
         for (int i = 0; i < cross_kv_num; i++) {
-    #if defined(CHIP_AX650)      
-            AX_U64 phySrc = encoder_.get_output_phy_addr(i);
-            AX_U64 phyDst = decoder_.get_input_phy_addr(decoder_start_index + i);
-            int size = encoder_.get_output_size(i);
-
-            int ret = AX_DMA_MemCopy(phyDst, phySrc, (AX_U64)size);
-            if (ret) {
-                ALOGW("AX_DMA_MemCopy failed! ret=0x%x, fallback to sys memcpy", ret);
-
-                decoder_.set_input(decoder_start_index + i, encoder_.get_output_ptr(i));
-                return;
-            }
-    #else
-            decoder_.set_input(decoder_start_index + i, encoder_.get_output_ptr(i));
-    #endif                
+            decoder_.set_input_dma(decoder_start_index + i, encoder_, i);
         }
     }
 

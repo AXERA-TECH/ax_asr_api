@@ -56,6 +56,10 @@ int AxModelRunner::set_inputs(const std::vector<void*>& datas) {
     return impl_->set_inputs(datas);
 }
 
+int AxModelRunner::set_input_dma(int dst_index, AxModelRunner& src_model, int src_index) {
+    return impl_->set_input_dma(dst_index, src_model, src_index);
+}
+
 int AxModelRunner::get_output(int index, void* data) {
     return impl_->get_output(index, data);
 }

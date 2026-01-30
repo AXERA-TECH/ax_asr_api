@@ -22,6 +22,10 @@
 #include "utils/memory_utils.hpp"
 #include "utils/logger.h"
 
+#if defined (CHIP_AX650)
+    #include "ax_dmadim_api.h"
+#endif
+
 #define AX_IO_CMM_ALIGN_SIZE   128
 
 class AxModelRunner::Impl {
@@ -143,6 +147,25 @@ public:
         }
 
         return 0;
+    }
+
+    int set_input_dma(int dst_index, AxModelRunner& src_model, int src_index) {
+        #if defined (CHIP_AX650)
+            AX_U64 phySrc = src_model.get_output_phy_addr(src_index);
+            AX_U64 phyDst = this->get_input_phy_addr(dst_index);
+            int size = src_model.get_output_size(i);
+
+            int ret = AX_DMA_MemCopy(phyDst, phySrc, (AX_U64)size);
+            if (ret) {
+                ALOGW("AX_DMA_MemCopy failed! ret=0x%x, fallback to sys memcpy", ret);
+
+                this->set_input(dst_index, src_model.get_output_ptr(src_index));
+                return 0;
+            }
+        #else
+            this->set_input(dst_index, src_model.get_output_ptr(src_index));
+            return 0;
+        #endif
     }
 
     int get_output(int index, void* data) {

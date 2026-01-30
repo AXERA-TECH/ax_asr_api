@@ -32,6 +32,8 @@ public:
 
     int set_input(int index, void* data);
     int set_inputs(const std::vector<void*>& datas);
+    // use DMA to copy data between models if possible, fallback to normal memcpy otherwise.
+    int set_input_dma(int dst_index, AxModelRunner& src_model, int src_index);
 
     int get_output(int index, void* data);
     int get_outputs(const std::vector<void*>& datas);
