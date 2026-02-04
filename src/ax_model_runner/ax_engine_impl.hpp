@@ -153,7 +153,7 @@ public:
         #if defined (CHIP_AX650)
             AX_U64 phySrc = src_model.get_output_phy_addr(src_index);
             AX_U64 phyDst = this->get_input_phy_addr(dst_index);
-            int size = src_model.get_output_size(i);
+            int size = src_model.get_output_size(src_index);
 
             int ret = AX_DMA_MemCopy(phyDst, phySrc, (AX_U64)size);
             if (ret) {
