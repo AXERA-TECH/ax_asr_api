@@ -73,6 +73,9 @@ public:
     }
 
     bool run(const std::vector<float>& audio_data, int sample_rate, const std::string& language, std::string& text_result) {
+        // Re-init fbank to clear previous audio data (OnlineFbank accumulates data)
+        init_fbank_();
+        
         // convert to uint16
         std::vector<float> buf(audio_data.size());
         for (int32_t i = 0; i != audio_data.size(); ++i) {
