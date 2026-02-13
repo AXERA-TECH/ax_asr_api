@@ -78,8 +78,6 @@ bool ASRServer::init(const std::string& model_path) {
 }
 
 void ASRServer::start(int port) {
-    this->setup_routes_();
-
     char ip_buffer[INET_ADDRSTRLEN]; // INET_ADDRSTRLEN is max length for IPv4 addr string
     const char* interface = "eth0";
 

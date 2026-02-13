@@ -25,4 +25,4 @@ transcription = client.audio.transcriptions.create(
 
 audio_file.close()
 
-print(transcription.text)
+print(f"audio: {args.audio}  text: {transcription.text}")
