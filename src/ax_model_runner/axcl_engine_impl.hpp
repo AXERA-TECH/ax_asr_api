@@ -78,11 +78,6 @@ public:
 
         m_engine_guard = std::make_unique<AxclEngineGuard>(nullptr, AXCL_VNPU_DISABLE, device_index, set_device);
 
-        // if (!set_device_(device_index)) {
-        //     ALOGE("set device %d failed!", device_index);
-        //     return -1;
-        // }
-
         auto ret = axclrtEngineLoadFromFile(model_path, &model_id_);
         if (ret != 0) {
             ALOGE("axclrtEngineLoadFromFile failed! ret=0x%x", ret);
@@ -157,11 +152,11 @@ public:
             return -1;
         }
 
-        if (m_strategy == AX_IO_BUFFER_STRATEGY_CACHED) {
-            for (int index = 0; index < m_input_num; index++) {
-                
-            }
-        }
+        // if (m_strategy == AX_IO_BUFFER_STRATEGY_CACHED) {
+        //     for (int index = 0; index < m_input_num; index++) {
+        //         axclrtMemFlush(inputs_[index], inputs_size_[index]);
+        //     }
+        // }
 
         if (const auto ret = axclrtEngineExecute(this->model_id_, this->context_id_, this->group_, this->io_); 0 != ret) {
             ALOGE("Run model failed{0x%08X}.\n", ret);
@@ -183,7 +178,11 @@ public:
             return -1;
         }
 
-        axclrtMemcpy(inputs_[index], data, inputs_size_[index], AXCL_MEMCPY_HOST_TO_DEVICE);
+        axclError ret = axclrtMemcpy(inputs_[index], data, inputs_size_[index], AXCL_MEMCPY_HOST_TO_DEVICE);
+        if (ret != 0) {
+            ALOGE("axclrtMemcpy H2D failed{0x%08X}, while setting input[%d] of size %d bytes.\n", ret, index, inputs_size_[index]);
+            return -1;
+        }
 
         return 0;
     }
@@ -226,10 +225,14 @@ public:
     }
 
     int get_output(int index, void* data) {
-        if (m_strategy == AX_IO_BUFFER_STRATEGY_CACHED)
-            axclrtMemFlush(outputs_[index], outputs_size_[index]);
+        // if (m_strategy == AX_IO_BUFFER_STRATEGY_CACHED)
+        //     axclrtMemFlush(outputs_[index], outputs_size_[index]);
 
-        axclrtMemcpy(data, outputs_[index], outputs_size_[index], AXCL_MEMCPY_DEVICE_TO_HOST);
+        axclError ret = axclrtMemcpy(data, outputs_[index], outputs_size_[index], AXCL_MEMCPY_DEVICE_TO_HOST);
+        if (ret != 0) {
+            ALOGE("axclrtMemcpy D2H failed{0x%08X}, while getting output[%d] of size %d bytes.\n", ret, index, outputs_size_[index]);
+            return -1;
+        }
 
         return 0;
     }
@@ -385,8 +388,9 @@ private:
                 return false;
             }
             this->input_tensor_shapes_.emplace_back(std::vector<int>(input_dims.dims, input_dims.dims + input_dims.dimCount));
+
             // clean memory, some cases model may need to clean memory
-            // axclrtMemset(this->inputs_[i], 0, size);
+            axclrtMemset(this->inputs_[i], 0, this->inputs_size_[i]);
         }
 
         // 9. prepare the memory, outputs
@@ -419,7 +423,7 @@ private:
             this->output_tensor_shapes_.emplace_back(std::vector<int>(output_dims.dims, output_dims.dims + output_dims.dimCount));
 
             // clean memory, some cases model may need to clean memory
-            // axclrtMemset(this->outputs_[i], 0, size);
+            axclrtMemset(this->outputs_[i], 0, this->outputs_size_[i]);
         }
 
         // 10. create the IO
