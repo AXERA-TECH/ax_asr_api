@@ -188,6 +188,11 @@ public:
     }
 
     int set_inputs(const std::vector<void*>& datas) {
+        if (datas.size() > m_input_num) {
+            ALOGE("Too much input: %d, max input num is %d", datas.size(), m_input_num);
+            return -1;
+        }
+
         for (int index = 0; index < m_input_num; index++) {
             void* data = datas[index];
             if (!data) {
@@ -238,7 +243,12 @@ public:
     }
 
     int get_outputs(const std::vector<void*>& datas) {
-        for (int index = 0; index < m_output_num; index++) {
+        if (datas.size() > m_output_num) {
+            ALOGE("Too much output: %d, max output num is %d", datas.size(), m_output_num);
+            return -1;
+        }
+
+        for (int index = 0; index < datas.size(); index++) {
             void* data = datas[index];
             if (!data) {
                 ALOGE("index %d data is null", index);
