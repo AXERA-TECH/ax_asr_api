@@ -10,14 +10,18 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <string.h>
+#include <ifaddrs.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/ioctl.h>
 #include <netinet/in.h>
 #include <net/if.h>
 #include <arpa/inet.h>
+#include <algorithm>
 #include <filesystem>
 #include <fstream>
+#include <set>
+#include <vector>
  
 #include "asr_server.hpp"
 #include "utils/logger.h"
@@ -32,42 +36,67 @@ static std::map<std::string, AX_ASR_TYPE_E> MODEL_MAP = {
         {"sensevoice", AX_SENSEVOICE}
     };
 
-int get_interface_ip(const char *interface_name, char *ip_address_buffer) {
-    int fd;
-    struct ifreq ifr;
+namespace {
 
-    // Ensure input buffers are valid
-    if (interface_name == NULL || ip_address_buffer == NULL) {
-        return -1;
-    }
+struct ListenAddress {
+    std::string ifname;
+    std::string ip;
+};
 
-    // Create a socket
-    fd = socket(AF_INET, SOCK_DGRAM, 0);
-    if (fd < 0) {
-        perror("socket error");
-        return -1;
-    }
-
-    // Specify the interface name
-    strncpy(ifr.ifr_name, interface_name, IFNAMSIZ - 1);
-    ifr.ifr_name[IFNAMSIZ - 1] = '\0'; // Ensure null termination
-
-    // Get the IP address
-    if (ioctl(fd, SIOCGIFADDR, &ifr) < 0) {
-        perror("ioctl error");
-        close(fd);
-        return -1;
-    }
-
-    // Convert the binary IP address to a human-readable string
-    struct sockaddr_in *addr = (struct sockaddr_in *)&ifr.ifr_addr;
-    strcpy(ip_address_buffer, inet_ntoa(addr->sin_addr));
-
-    // Close the socket
-    close(fd);
-
-    return 0;
+bool is_valid_listen_ip(const std::string& ip) {
+    return !ip.empty() && ip != "0.0.0.0" && ip.rfind("127.", 0) != 0 && ip.rfind("169.254.", 0) != 0;
 }
+
+std::string format_listen_url(const std::string& ip, int port) {
+    return "http://" + ip + ":" + std::to_string(port) + ASR_ENDPOINT;
+}
+
+std::vector<ListenAddress> enumerate_listen_ipv4_addresses() {
+    std::vector<ListenAddress> addresses;
+    std::set<std::string> seen_ips;
+    struct ifaddrs* ifaddr = nullptr;
+
+    if (getifaddrs(&ifaddr) != 0) {
+        ALOGW("getifaddrs failed, cannot enumerate listen addresses");
+        return addresses;
+    }
+
+    for (struct ifaddrs* it = ifaddr; it != nullptr; it = it->ifa_next) {
+        if (it->ifa_addr == nullptr || it->ifa_name == nullptr) {
+            continue;
+        }
+        if (it->ifa_addr->sa_family != AF_INET) {
+            continue;
+        }
+        if ((it->ifa_flags & IFF_UP) == 0 || (it->ifa_flags & IFF_LOOPBACK) != 0) {
+            continue;
+        }
+
+        char ip_buffer[INET_ADDRSTRLEN] = {0};
+        const auto* addr = reinterpret_cast<const struct sockaddr_in*>(it->ifa_addr);
+        if (inet_ntop(AF_INET, &addr->sin_addr, ip_buffer, sizeof(ip_buffer)) == nullptr) {
+            continue;
+        }
+
+        std::string ip(ip_buffer);
+        if (!is_valid_listen_ip(ip) || !seen_ips.insert(ip).second) {
+            continue;
+        }
+
+        addresses.push_back({it->ifa_name, ip});
+    }
+
+    freeifaddrs(ifaddr);
+    std::sort(addresses.begin(), addresses.end(), [](const ListenAddress& lhs, const ListenAddress& rhs) {
+        if (lhs.ifname == rhs.ifname) {
+            return lhs.ip < rhs.ip;
+        }
+        return lhs.ifname < rhs.ifname;
+    });
+    return addresses;
+}
+
+}  // namespace
 
 bool ASRServer::init(const std::string& model_path) {
     model_path_ = model_path;
@@ -80,16 +109,17 @@ bool ASRServer::init(const std::string& model_path) {
 void ASRServer::start(int port) {
     this->setup_routes_();
 
-    char ip_buffer[INET_ADDRSTRLEN]; // INET_ADDRSTRLEN is max length for IPv4 addr string
-    const char* interface = "eth0";
-
-    if (get_interface_ip(interface, ip_buffer) == 0) {
-        ALOGI("Starting server at %s:%d", ip_buffer, port);
+    const auto addresses = enumerate_listen_ipv4_addresses();
+    if (addresses.empty()) {
+        ALOGW("No non-loopback IPv4 address found, server will listen on 0.0.0.0:%d", port);
     } else {
-        ALOGE("Failed to get IP address for %s", interface);
-        return;
+        for (const auto& address : addresses) {
+            ALOGI("Available URL (%s): %s", address.ifname.c_str(),
+                  format_listen_url(address.ip, port).c_str());
+        }
     }
 
+    ALOGI("Listening on 0.0.0.0:%d", port);
     this->srv_.listen("0.0.0.0", port);
 }
 
