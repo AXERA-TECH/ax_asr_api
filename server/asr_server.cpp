@@ -107,8 +107,6 @@ bool ASRServer::init(const std::string& model_path) {
 }
 
 void ASRServer::start(int port) {
-    this->setup_routes_();
-
     const auto addresses = enumerate_listen_ipv4_addresses();
     if (addresses.empty()) {
         ALOGW("No non-loopback IPv4 address found, server will listen on 0.0.0.0:%d", port);

@@ -284,6 +284,9 @@ private:
         ALOGD("postprocess: encoder_out_lens=%d", encoder_out_lens);
 
         std::vector<int> token_int;
+        if (encoder_out_lens <= 4)
+            return token_int;
+            
         std::vector<int> yseq(encoder_out_lens - 4);
         for (int i = 4; i < encoder_out_lens; i++) {
             auto max_it = std::max_element(
