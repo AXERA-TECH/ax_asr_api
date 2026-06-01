@@ -94,30 +94,32 @@ AX_ASR_API int AX_ASR_RunFile(AX_ASR_HANDLE handle,
                    char** result) {
     if (!handle) {
         ALOGE("handle is NULL!");
-        return -1;
+        return AX_ASR_ERR_INVALID_ARGUMENT;
     }    
 
     if (!wav_file) {
         ALOGE("wav_file is NULL!");
-        return -1;
+        return AX_ASR_ERR_INVALID_ARGUMENT;
     }      
     
     if (!language) {
         ALOGE("language is NULL!");
-        return -1;
+        return AX_ASR_ERR_INVALID_ARGUMENT;
     }   
     
     if (!result) {
         ALOGE("result is NULL!");
-        return -1;
+        return AX_ASR_ERR_INVALID_ARGUMENT;
     } 
+
+    *result = nullptr;
 
     utils::AudioLoader audio_loader;
     auto interface = static_cast<ASRInterface*>(handle);
 
     if (!audio_loader.load(wav_file, interface->sample_rate())) {
         ALOGE("load wav failed!\n");
-        return -1;
+        return AX_ASR_ERR_AUDIO_LOAD_FAILED;
     }
 
     auto& samples = audio_loader.samples;
@@ -151,18 +153,58 @@ AX_ASR_API int AX_ASR_RunPCM(AX_ASR_HANDLE handle,
                    int sample_rate,
                    const char* language,
                    char** result) {
+    if (!handle) {
+        ALOGE("handle is NULL!");
+        return AX_ASR_ERR_INVALID_ARGUMENT;
+    }
+
+    if (!pcm_data) {
+        ALOGE("pcm_data is NULL!");
+        return AX_ASR_ERR_INVALID_ARGUMENT;
+    }
+
+    if (num_samples <= 0) {
+        ALOGE("num_samples(%d) must be positive!", num_samples);
+        return AX_ASR_ERR_INVALID_ARGUMENT;
+    }
+
+    if (sample_rate <= 0) {
+        ALOGE("sample_rate(%d) must be positive!", sample_rate);
+        return AX_ASR_ERR_INVALID_ARGUMENT;
+    }
+
+    if (!language) {
+        ALOGE("language is NULL!");
+        return AX_ASR_ERR_INVALID_ARGUMENT;
+    }
+
+    if (!result) {
+        ALOGE("result is NULL!");
+        return AX_ASR_ERR_INVALID_ARGUMENT;
+    }
+
+    *result = nullptr;
+
     auto interface = static_cast<ASRInterface*>(handle);
     std::vector<float> audio_data(pcm_data, pcm_data + num_samples);    
     std::string text_result;
     
     if (!interface->run(audio_data, sample_rate, std::string(language), text_result)) {
         ALOGE("RunPCM failed!");
-        return -1;
+        return AX_ASR_ERR_RUN_FAILED;
     }
 
     *result = strdup(text_result.c_str());
+    if (!*result) {
+        ALOGE("strdup result failed!");
+        return AX_ASR_ERR_NO_MEMORY;
+    }
 
-    return 0;
+    return AX_ASR_SUCCESS;
+}
+
+AX_ASR_API void AX_ASR_Free(char* result) {
+    free(result);
 }
 
 #ifdef __cplusplus

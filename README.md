@@ -18,6 +18,9 @@ C++ ASR API on Axera platforms
 - [快速开始](#快速开始)  
 - [下载模型](#下载模型)  
 - [编译](#编译)  
+- [HTTP API](#http-api)
+- [OpenAPI 描述](#openapi-描述)
+- [C-SDK](#c-sdk)
 - [测试](#测试)  
 - [性能表现](#性能表现)  
 - [集成](#集成)  
@@ -33,17 +36,28 @@ C++ ASR API on Axera platforms
 ```cpp
 #include "ax_asr_api.h"
 
-AX_ASR_HANDLE handle = AX_ASR_Init(WHISPER_TINY, model_path);
+AX_ASR_HANDLE handle = AX_ASR_Init(AX_WHISPER_TINY, "./models-ax650");
+if (!handle) {
+    return -1;
+}
 
-char* result;
-if (0 != AX_ASR_RunFile(handle, wav_file, language, &result)) {
+char* result = NULL;
+int ret = AX_ASR_RunFile(handle, "demo.wav", "zh", &result);
+if (ret != AX_ASR_SUCCESS) {
     AX_ASR_Uninit(handle);
     return -1;
 }
 
-free(result);
+AX_ASR_Free(result);
 AX_ASR_Uninit(handle);
 ```
+
+说明:
+
+- `model_path` 传模型根目录，例如 `./models-ax650`
+- `AX_ASR_RunFile` 支持 `wav` 和 `mp3`
+- 返回字符串必须使用 `AX_ASR_Free` 释放
+- 同一个 `AX_ASR_HANDLE` 不建议被多个线程并发调用
 
 ## 下载模型
 
@@ -113,7 +127,7 @@ bash download_bsp.sh
 
  - AX8850
  ```bash
- bash build_ax8850_aarch64.sh.sh
+ bash build_ax8850_aarch64.sh
  ```
   编译完成后的产物在install/ax8850_aarch64下
 
@@ -141,16 +155,205 @@ bash download_bsp.sh
   bash build_ax650.sh -DBUILD_SERVER=ON
   ```    
 
+## HTTP API
+
+服务端默认提供以下接口:
+
+- `POST /v1/audio/transcriptions`
+- `GET /v1/models`
+- `GET /healthz`
+
+### 认证
+
+当 `asr_server` 启动时传入 `--api_key your_token`，客户端需要携带:
+
+```http
+Authorization: Bearer your_token
+```
+
+如果不传 `--api_key`，则不启用鉴权。
+
+### 模型名
+
+原生模型名:
+
+- `sensevoice`
+- `whisper_tiny`
+- `whisper_base`
+- `whisper_small`
+- `whisper_turbo`
+
+兼容别名:
+
+- `gpt-4o-transcribe` -> `sensevoice`
+- `gpt-4o-mini-transcribe` -> `sensevoice`
+- `whisper-1` -> `whisper_turbo`
+
+### POST /v1/audio/transcriptions
+
+请求类型: `multipart/form-data`
+
+请求字段:
+
+| 字段 | 必填 | 说明 |
+| --- | --- | --- |
+| `file` | 是 | 音频文件，当前支持 `.wav` 和 `.mp3` |
+| `model` | 是 | 见上面的模型名 |
+| `language` | 否 | `sensevoice` 默认 `auto`，`whisper_*` 默认 `en` |
+| `response_format` | 否 | `json`、`text`、`verbose_json`，默认 `json` |
+
+语言说明:
+
+- `sensevoice`: `auto`、`zh`、`en`、`yue`、`ja`、`ko`
+- `whisper_*`: 语言列表由对应模型配置文件决定，服务端会校验非法值
+
+`response_format` 返回约定:
+
+- `json`: `{"text":"..."}`
+- `text`: 纯文本响应
+- `verbose_json`: 当前返回 `text`、`model`、`language`、`request_id`
+
+注意:
+
+- 当前 `verbose_json` 还不包含 `segments`、时间戳或说话人信息
+- 当前接口定位是“单文件同步转写”
+
+#### cURL 示例
+
+```bash
+curl http://127.0.0.1:8080/v1/audio/transcriptions \
+  -H "Authorization: Bearer your_token" \
+  -F file="@demo.wav" \
+  -F model="sensevoice" \
+  -F language="zh" \
+  -F response_format="json"
+```
+
+成功响应:
+
+```json
+{
+  "text": "甚至出现交易几乎停滞的情况"
+}
+```
+
+`verbose_json` 响应示例:
+
+```json
+{
+  "language": "auto",
+  "model": "sensevoice",
+  "request_id": "axasr-1780307147723-0",
+  "text": "甚至出现交易几乎停滞的情况"
+}
+```
+
+错误响应示例:
+
+```json
+{
+  "error": {
+    "message": "Unsupported language \"invalid_lang\" for model whisper_tiny.",
+    "type": "invalid_request_error",
+    "param": "language",
+    "code": 400
+  }
+}
+```
+
+常见状态码:
+
+| 状态码 | 含义 |
+| --- | --- |
+| `200` | 成功 |
+| `400` | 参数错误、文件格式错误、语言不支持 |
+| `401` | 缺少或错误的 Bearer Token |
+| `404` | 路径不存在或模型不可用 |
+| `413` | 上传文件超过服务端限制 |
+| `500` | 服务端内部错误 |
+
+### GET /v1/models
+
+用于查询当前服务暴露的模型列表。
+
+示例:
+
+```bash
+curl http://127.0.0.1:8080/v1/models \
+  -H "Authorization: Bearer your_token"
+```
+
+### GET /healthz
+
+用于健康检查，不要求鉴权。
+
+示例响应:
+
+```json
+{
+  "auth_enabled": true,
+  "status": "ok"
+}
+```
+
+## OpenAPI 描述
+
+仓库提供了更正式的 OpenAPI 3 描述文件:
+
+- [docs/openapi.yaml](/opt/rzyang/Github/ax_asr_api/docs/openapi.yaml)
+
+说明:
+
+- 该文件描述的是当前仓库已实现能力，不包含尚未支持的流式识别、时间戳、分段或说话人能力
+- `verbose_json` 在当前实现中只返回 `text`、`model`、`language`、`request_id`
+
+如果本地安装了 Swagger UI、Redoc 或其它 OpenAPI 工具，可以直接加载 `docs/openapi.yaml` 查看。
+
+## C-SDK
+
+头文件: `include/ax_asr_api.h`  
+动态库: `lib/libax_asr_api.so`
+
+### 核心接口
+
+```c
+AX_ASR_HANDLE AX_ASR_Init(AX_ASR_TYPE_E asr_type, const char* model_path);
+void AX_ASR_Uninit(AX_ASR_HANDLE handle);
+int AX_ASR_RunFile(AX_ASR_HANDLE handle, const char* wav_file, const char* language, char** result);
+int AX_ASR_RunPCM(AX_ASR_HANDLE handle, float* pcm_data, int num_samples, int sample_rate, const char* language, char** result);
+void AX_ASR_Free(char* result);
+```
+
+### 返回码
+
+| 返回码 | 含义 |
+| --- | --- |
+| `AX_ASR_SUCCESS` | 成功 |
+| `AX_ASR_ERR_INVALID_ARGUMENT` | 参数非法 |
+| `AX_ASR_ERR_INIT_FAILED` | 初始化失败 |
+| `AX_ASR_ERR_AUDIO_LOAD_FAILED` | 音频加载失败 |
+| `AX_ASR_ERR_RUN_FAILED` | 推理失败 |
+| `AX_ASR_ERR_NO_MEMORY` | 内存分配失败 |
+
+### 使用约束
+
+- `model_path` 传模型根目录，不是子目录
+- `AX_ASR_RunFile` 读取文件路径；`AX_ASR_RunPCM` 适合上层自行管理音频流
+- `AX_ASR_RunPCM` 的输入为单声道 `float` PCM，范围 `-1.0 ~ 1.0`
+- 返回文本由库内分配，调用方必须使用 `AX_ASR_Free`
+- 同一个 `AX_ASR_HANDLE` 不建议并发调用；如果需要多并发，请创建多个 handle
+
 ## 测试
 
-### 主程序  
+### 主程序
 
-```
-./install/ax650/main -a demo.wav -t whisper_tiny -p ./models-ax650/whisper -l zh
+```bash
+./install/ax650/main -a demo.wav -t whisper_tiny -p ./models-ax650 -l zh
 ```
 
-Usage:  
-```
+Usage:
+
+```text
 ./install/ax8850_aarch64/main --help
 usage: ./install/ax8850_aarch64/main --audio=string --model_type=string [options] ...
 options:
@@ -159,48 +362,52 @@ options:
   -p, --model_path    model path which contains axmodel (string [=./models-ax650])
   -l, --language      en, zh (string [=zh])
   -?, --help          print this message
-
 ```
 
 ### 服务端(asr_server)
 
+```bash
+./install/ax8850_aarch64/asr_server --port 8080 --model_path ./models-ax650 --api_key your_token
 ```
-./install/ax8850_aarch64/asr_server --port 8080
 
-```
+Usage:
 
-Usage:  
-```
+```text
 ./install/ax8850_aarch64/asr_server --help
 usage: ./install/ax8850_aarch64/asr_server [options] ...
 options:
   -p, --port          On which port to run the server (int [=8080])
   -m, --model_path    model path which contains axmodel (string [=./models-ax650])
+  -k, --api_key       Bearer token required by the server. Empty means auth disabled. (string [=])
+      --payload_limit_mb  Maximum accepted upload size in MiB (int [=25])
+      --read_timeout_sec  Socket read timeout in seconds (int [=120])
+      --write_timeout_sec Socket write timeout in seconds (int [=120])
   -?, --help          print this message
-
 ```
 
-### 客户端
+### Python 客户端
 
-#### Python
-
-```
+```bash
 cd scripts
 pip install openai
-python test_asr_server.py --ip 10.126.33.146 --port 8080 --audio ../demo.wav -m sensevoice -l zh
+python test_asr_server.py --ip 10.126.33.146 --port 8080 --audio ../demo.wav -m sensevoice -l zh --api-key your_token
 ```
-Check python test_asr_server.py --help for help.  
 
+更多参数见:
+
+```bash
+python test_asr_server.py --help
+```
 
 ### 单元测试
 
-以下为tests下单元测试的使用示例和说明:
+以下为 `tests/` 下单元测试的使用示例和说明:
 
-- test_whisper_tiny: 加载whisper tiny模型，打印demo.wav的识别结果
-- test_whisper_base: 加载whisper base模型，打印demo.wav的识别结果
-- test_whisper_small: 加载whisper small模型，打印demo.wav的识别结果
-- test_whisper_turbo: 加载whisper turbo模型，打印demo.wav的识别结果
-- test_sensevoice: 加载sensevoice模型，打印demo.wav的识别结果
+- `test_whisper_tiny`: 加载 whisper tiny 模型，打印 `demo.wav` 的识别结果
+- `test_whisper_base`: 加载 whisper base 模型，打印 `demo.wav` 的识别结果
+- `test_whisper_small`: 加载 whisper small 模型，打印 `demo.wav` 的识别结果
+- `test_whisper_turbo`: 加载 whisper turbo 模型，打印 `demo.wav` 的识别结果
+- `test_sensevoice`: 加载 sensevoice 模型，打印 `demo.wav` 的识别结果
 
 
 ## 性能表现

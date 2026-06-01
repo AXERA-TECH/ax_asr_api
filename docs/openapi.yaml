@@ -1,0 +1,360 @@
+openapi: 3.0.3
+info:
+  title: AX ASR HTTP API
+  version: 1.0.0
+  description: |
+    HTTP API for single-file synchronous ASR on Axera platforms.
+
+    This specification describes the current server implementation in this repository.
+
+    Notes:
+    - Authentication is enabled only when `asr_server` is started with `--api_key`.
+    - `POST /v1/audio/transcriptions` is compatible with the basic OpenAI SDK calling pattern, but it does not implement the full OpenAI transcription feature set.
+    - `response_format=verbose_json` currently returns `text`, `model`, `language`, and `request_id` only. It does not include segments, timestamps, or speaker diarization.
+servers:
+  - url: http://{host}:{port}
+    description: Local or device deployment
+    variables:
+      host:
+        default: 127.0.0.1
+      port:
+        default: "8080"
+tags:
+  - name: Health
+  - name: Models
+  - name: Transcriptions
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: API key
+  schemas:
+    Error:
+      type: object
+      required:
+        - message
+        - type
+        - param
+        - code
+      properties:
+        message:
+          type: string
+        type:
+          type: string
+          enum:
+            - authentication_error
+            - invalid_request_error
+            - not_found_error
+            - payload_too_large
+            - server_error
+        param:
+          type: string
+          description: Request field or header related to the error.
+        code:
+          type: integer
+          enum: [400, 401, 404, 413, 500]
+    ErrorResponse:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          $ref: '#/components/schemas/Error'
+    HealthResponse:
+      type: object
+      required:
+        - auth_enabled
+        - status
+      properties:
+        auth_enabled:
+          type: boolean
+        status:
+          type: string
+          enum: [ok]
+    Model:
+      type: object
+      required:
+        - id
+        - object
+        - owned_by
+      properties:
+        id:
+          type: string
+          example: sensevoice
+        object:
+          type: string
+          enum: [model]
+        owned_by:
+          type: string
+          example: axera
+        root:
+          type: string
+          description: Present for compatibility aliases.
+          example: sensevoice
+    ModelListResponse:
+      type: object
+      required:
+        - object
+        - data
+      properties:
+        object:
+          type: string
+          enum: [list]
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Model'
+    JsonTranscriptionResponse:
+      type: object
+      required:
+        - text
+      properties:
+        text:
+          type: string
+          example: 甚至出现交易几乎停滞的情况
+    VerboseJsonTranscriptionResponse:
+      type: object
+      required:
+        - text
+        - model
+        - language
+        - request_id
+      properties:
+        text:
+          type: string
+          example: 甚至出现交易几乎停滞的情况
+        model:
+          type: string
+          example: sensevoice
+        language:
+          type: string
+          example: auto
+        request_id:
+          type: string
+          example: axasr-1780307147723-0
+    TranscriptionRequest:
+      type: object
+      required:
+        - file
+        - model
+      properties:
+        file:
+          type: string
+          format: binary
+          description: Audio file upload. Supported extensions are `.wav` and `.mp3`.
+        model:
+          type: string
+          enum:
+            - sensevoice
+            - whisper_tiny
+            - whisper_base
+            - whisper_small
+            - whisper_turbo
+            - gpt-4o-transcribe
+            - gpt-4o-mini-transcribe
+            - whisper-1
+          description: |
+            Supported models and compatibility aliases.
+            Aliases resolve to:
+            - `gpt-4o-transcribe` -> `sensevoice`
+            - `gpt-4o-mini-transcribe` -> `sensevoice`
+            - `whisper-1` -> `whisper_turbo`
+        language:
+          type: string
+          description: |
+            Optional language hint.
+            Defaults:
+            - `sensevoice` -> `auto`
+            - `whisper_*` -> `en`
+
+            SenseVoice supports: `auto`, `zh`, `en`, `yue`, `ja`, `ko`.
+            Whisper language support depends on the selected model configuration.
+        response_format:
+          type: string
+          enum:
+            - json
+            - text
+            - verbose_json
+          default: json
+          description: |
+            Response shape selector.
+            `verbose_json` does not include segments or timestamps in the current implementation.
+  responses:
+    BadRequest:
+      description: Invalid request.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            unsupported_language:
+              value:
+                error:
+                  message: Unsupported language "invalid_lang" for model whisper_tiny.
+                  type: invalid_request_error
+                  param: language
+                  code: 400
+    Unauthorized:
+      description: Missing or invalid bearer token.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            missing_auth:
+              value:
+                error:
+                  message: Missing Authorization header.
+                  type: authentication_error
+                  param: Authorization
+                  code: 401
+    NotFound:
+      description: Resource path or model not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    PayloadTooLarge:
+      description: Uploaded file exceeds configured payload limit.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    InternalServerError:
+      description: Server-side failure.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+paths:
+  /healthz:
+    get:
+      tags: [Health]
+      summary: Health check
+      description: Returns basic server health information. Authentication is not required.
+      operationId: getHealth
+      responses:
+        '200':
+          description: Healthy server.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+              examples:
+                ok:
+                  value:
+                    auth_enabled: true
+                    status: ok
+  /v1/models:
+    get:
+      tags: [Models]
+      summary: List available models
+      description: Lists server-exposed model names and compatibility aliases.
+      operationId: listModels
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Available models.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModelListResponse'
+              examples:
+                default:
+                  value:
+                    object: list
+                    data:
+                      - id: sensevoice
+                        object: model
+                        owned_by: axera
+                      - id: whisper_base
+                        object: model
+                        owned_by: axera
+                      - id: whisper_small
+                        object: model
+                        owned_by: axera
+                      - id: whisper_tiny
+                        object: model
+                        owned_by: axera
+                      - id: whisper_turbo
+                        object: model
+                        owned_by: axera
+                      - id: gpt-4o-transcribe
+                        object: model
+                        owned_by: axera
+                        root: sensevoice
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /v1/audio/transcriptions:
+    post:
+      tags: [Transcriptions]
+      summary: Transcribe an audio file
+      description: |
+        Performs single-file synchronous ASR.
+
+        The request is `multipart/form-data` and accepts `.wav` or `.mp3` input only.
+      operationId: createTranscription
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TranscriptionRequest'
+            encoding:
+              file:
+                contentType: audio/wav, audio/mpeg, application/octet-stream
+      responses:
+        '200':
+          description: Transcription result.
+          headers:
+            x-request-id:
+              description: Present on transcription requests.
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/JsonTranscriptionResponse'
+                  - $ref: '#/components/schemas/VerboseJsonTranscriptionResponse'
+              examples:
+                json:
+                  value:
+                    text: 甚至出现交易几乎停滞的情况
+                verbose_json:
+                  value:
+                    language: auto
+                    model: sensevoice
+                    request_id: axasr-1780307147723-0
+                    text: 甚至出现交易几乎停滞的情况
+            text/plain:
+              schema:
+                type: string
+              examples:
+                text:
+                  value: 甚至出现交易几乎停滞的情况
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    options:
+      tags: [Transcriptions]
+      summary: CORS preflight for transcription endpoint
+      operationId: optionsTranscription
+      responses:
+        '204':
+          description: Preflight accepted.

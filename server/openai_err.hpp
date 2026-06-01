@@ -16,15 +16,19 @@
 #include "utils/nlohmann/json.hpp"
 
 enum OPENAI_ERR_CODE {
+    OPENAI_ERR_UNAUTHORIZED = 401,
     OPENAI_ERR_BAD_REQUEST = 400,
     OPENAI_ERR_NOT_FOUND = 404,
+    OPENAI_ERR_PAYLOAD_TOO_LARGE = 413,
     OPENAI_ERR_INTERNAL_SERVER_ERROR = 500
 };
 
 static std::map<OPENAI_ERR_CODE, std::string> OPENAI_ERR_TYPE_MAP = {
-    {OPENAI_ERR_BAD_REQUEST, "Bad request! Your request was malformed or missing some required parameters."},
-    {OPENAI_ERR_NOT_FOUND, "Requested resource does not exist."},
-    {OPENAI_ERR_INTERNAL_SERVER_ERROR, "Issue on our side, please check log on server side and contact us."}
+    {OPENAI_ERR_UNAUTHORIZED, "authentication_error"},
+    {OPENAI_ERR_BAD_REQUEST, "invalid_request_error"},
+    {OPENAI_ERR_NOT_FOUND, "not_found_error"},
+    {OPENAI_ERR_PAYLOAD_TOO_LARGE, "payload_too_large"},
+    {OPENAI_ERR_INTERNAL_SERVER_ERROR, "server_error"}
 };
 
 class ErrorResponse {

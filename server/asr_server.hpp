@@ -9,8 +9,12 @@
  **************************************************************************************************/
 #pragma once
 
+#include <atomic>
+#include <memory>
 #include <map>
+#include <mutex>
 #include <string>
+#include <vector>
 
 #include "httplib.h"
 #include "api/ax_asr_api.h"
@@ -18,6 +22,15 @@
 
 #define DEFAULT_PORT    8080
 #define ASR_ENDPOINT    "/v1/audio/transcriptions"
+
+struct ASRServerConfig {
+    std::string model_path;
+    std::string api_key;
+    std::string allowed_origin = "*";
+    size_t payload_max_length = 25 * 1024 * 1024;
+    int read_timeout_sec = 120;
+    int write_timeout_sec = 120;
+};
 
 /* OpenAI-Compatible server
    Following API docs from: https://platform.openai.com/docs/api-reference/audio/createTranscription
@@ -85,31 +98,64 @@
 class ASRServer {
 public:
     ASRServer() = default;
-    ~ASRServer() = default;
+    ~ASRServer();
 
-    bool init(const std::string& model_path);
-    void start(int port = DEFAULT_PORT);
+    bool init(const ASRServerConfig& config);
+    bool start(int port = DEFAULT_PORT);
     void stop();
 
 private:
+    struct ModelInstance {
+        explicit ModelInstance(AX_ASR_HANDLE h): handle(h) {}
+        ~ModelInstance() {
+            if (handle) {
+                AX_ASR_Uninit(handle);
+            }
+        }
+
+        AX_ASR_HANDLE handle = nullptr;
+        std::mutex mutex;
+    };
+
     void setup_routes_();
-    AX_ASR_HANDLE load_asr_(const std::string& model_name);
-    // 设置CORS头
-    void set_CORS_headers_(httplib::Response& res);
+    std::shared_ptr<ModelInstance> load_asr_(const std::string& canonical_model_name);
+    std::string canonical_model_name_(const std::string& requested_model_name) const;
+    std::string default_language_for_model_(const std::string& canonical_model_name) const;
+    bool is_supported_audio_file_(const httplib::FormData& file) const;
+    bool validate_auth_(const httplib::Request& req, httplib::Response& res) const;
+    bool validate_language_(const std::string& canonical_model_name,
+                            const std::string& requested_language,
+                            std::string& resolved_language,
+                            httplib::Response& res) const;
+    bool supported_languages_for_model_(const std::string& canonical_model_name,
+                                        std::vector<std::string>& languages) const;
+    bool parse_response_format_(const httplib::Request& req,
+                                std::string& response_format,
+                                httplib::Response& res) const;
+    std::string create_request_id_();
+    void set_CORS_headers_(const httplib::Request& req, httplib::Response& res) const;
     
     /*
      * request: Content-Type: multipart/form-data
      * {
      *      "model": "sensevoice",
-     *      "file": binary stream of audio file, supports wav and mp3.
-     *      "language": For whisper, check https://whisper-api.com/docs/languages/
+      *      "file": binary stream of audio file, supports wav and mp3.
+     *      "language": optional. For whisper, defaults to en. For sensevoice, defaults to auto.
+     *                  For whisper, check https://whisper-api.com/docs/languages/
      *                  For sensevoice, support auto, zh, en, yue, ja, ko
      * }
     */
-    bool check_request_(const httplib::Request& req, httplib::Response& res);
+    bool check_request_(const httplib::Request& req,
+                        std::string& canonical_model_name,
+                        std::string& language,
+                        std::string& response_format,
+                        httplib::Response& res);
 
 private:
-    std::map<std::string, AX_ASR_HANDLE> handles_;
+    std::map<std::string, std::shared_ptr<ModelInstance>> handles_;
+    mutable std::mutex handles_mutex_;
+    mutable std::map<std::string, std::vector<std::string>> language_cache_;
     httplib::Server srv_;
-    std::string model_path_;
+    ASRServerConfig config_;
+    std::atomic<uint64_t> request_counter_{0};
 };

@@ -16,6 +16,14 @@ extern "C" {
 
 #define AX_ASR_API __attribute__((visibility("default")))
 
+enum AX_ASR_STATUS_E {
+    AX_ASR_SUCCESS = 0,
+    AX_ASR_ERR_INVALID_ARGUMENT = -1,
+    AX_ASR_ERR_INIT_FAILED = -2,
+    AX_ASR_ERR_AUDIO_LOAD_FAILED = -3,
+    AX_ASR_ERR_RUN_FAILED = -4,
+    AX_ASR_ERR_NO_MEMORY = -5
+};
 
 // Supported asr
 enum AX_ASR_TYPE_E {
@@ -113,7 +121,14 @@ AX_ASR_API int AX_ASR_RunPCM(AX_ASR_HANDLE handle,
                    int num_samples,
                    int sample_rate,
                    const char* language,
-                   char** result);                   
+                   char** result);
+
+/**
+ * @brief Free transcription text returned by AX_ASR_RunFile/AX_ASR_RunPCM.
+ *
+ * @param result Buffer returned through the result output parameter.
+ */
+AX_ASR_API void AX_ASR_Free(char* result);
 
 #ifdef __cplusplus
 }
