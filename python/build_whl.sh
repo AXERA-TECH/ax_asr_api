@@ -16,12 +16,15 @@ if [[ "$INSTALL_DIR" == *"ax8850"* ]]; then
 elif [[ "$INSTALL_DIR" == *"ax650"* ]]; then
     MSP_LIB_DIR="$REPO_ROOT/ax650n_bsp_sdk/msp/out/lib"
     MSP_LIBS='ax_sys;ax_engine;ax_interpreter;ax_dmadim'
-else
-    MSP_LIB_DIR="$REPO_ROOT/ax650n_bsp_sdk/msp/out/lib"
-    if [[ ! -d "$MSP_LIB_DIR" ]]; then
-        MSP_LIB_DIR="$REPO_ROOT/ax620e_bsp_sdk/msp/out/arm64_glibc"
-    fi
+elif [[ "$INSTALL_DIR" == *"ax630c"* ]]; then
+    MSP_LIB_DIR="$REPO_ROOT/ax620e_bsp_sdk/msp/out/arm64_glibc"
     MSP_LIBS='ax_sys;ax_engine;ax_interpreter'
+elif [[ "$INSTALL_DIR" == *"ax620q"* ]]; then
+    MSP_LIB_DIR="$REPO_ROOT/ax620e_bsp_sdk/msp/out/arm_uclibc"
+    MSP_LIBS='ax_sys;ax_engine;ax_interpreter'
+else
+    echo "ERROR: unknown platform in INSTALL_DIR: $INSTALL_DIR"
+    exit 1
 fi
 
 echo "=== Build Configuration ==="
@@ -31,7 +34,6 @@ echo "MSP_LIB_DIR:   $MSP_LIB_DIR"
 echo "MSP_LIBS:      $MSP_LIBS"
 echo
 
-# Verify prerequisites
 if [[ ! -f "$AX_ASR_LIB_DIR/libax_asr_api.a" ]]; then
     echo "ERROR: libax_asr_api.a not found in $AX_ASR_LIB_DIR"
     exit 1
