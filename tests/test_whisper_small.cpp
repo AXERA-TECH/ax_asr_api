@@ -62,7 +62,7 @@ int main(int argc, char** argv) {
     printf("Result: %s\n", result);
     printf("RTF(%.2f / %.2f) = %.4f\n", inference_time, duration, inference_time / duration);
 
-    free(result);
+    AX_ASR_Free(result);
     AX_ASR_Uninit(handle);
     return 0;
 }

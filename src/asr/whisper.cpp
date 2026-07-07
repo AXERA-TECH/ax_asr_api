@@ -7,7 +7,6 @@
  * written consent of Axera Semiconductor (Ningbo) Co., Ltd.
  *
  **************************************************************************************************/
-#include <mutex>
 #include <map>
 #include <fstream>
 #include <algorithm>
@@ -287,9 +286,7 @@ private:
     void preprocess_(const std::vector<float>& audio_data, int sample_rate, int n_mels) {
         std::vector<float> resampled_data = utils::resample(audio_data, sample_rate, config_.sample_rate);
 
-        int n_samples = resampled_data.size();
         auto mel = librosa::Feature::melspectrogram(resampled_data, WHISPER_SAMPLE_RATE, WHISPER_N_FFT, WHISPER_HOP_LENGTH, "hann", true, "reflect", 2.0f, n_mels, 0.0f, WHISPER_SAMPLE_RATE / 2.0f);
-        int n_mel = mel.size();
         int n_frames = mel[0].size();
 
         // clamping and normalization
@@ -344,10 +341,8 @@ private:
         const int n_text_layer = config_.n_text_layer;
         const int n_text_ctx = config_.n_text_ctx;
         const int n_text_state = config_.n_text_state;
-        const int self_kv_index = 1;
         const int offset_index = 1 + 2 + 2;
         const int mask_index = offset_index + 1;
-        const int this_kv_index = 1;
 
         causal_mask_1d_(offset);
 
@@ -394,7 +389,6 @@ private:
     }
 
 private:
-    std::mutex mutex_;
     AxModelRunner encoder_, decoder_;
     std::vector<std::string> tokens_;
     std::map<std::string, int> lang_token_map_;
