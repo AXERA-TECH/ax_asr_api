@@ -49,7 +49,7 @@ jobs:
                 -DCHIP_\$CHIP=ON \
                 -DCMAKE_INSTALL_PREFIX=../install/\$PLATFORM \
                 -DCMAKE_BUILD_TYPE=Release &&
-              make -j\$(nproc) ax_asr_api &&
+              make -j$(nproc) ax_asr_api && cmake --install . &&
               cd /ws/python &&
               bash build_whl.sh /ws/install/\$PLATFORM
             "
