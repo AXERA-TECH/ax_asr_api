@@ -15,7 +15,7 @@ if [[ "$INSTALL_DIR" == *"ax8850"* ]]; then
     MSP_LIBS='axcl_rt;axcl_pkg;axcl_comm;axcl_npu;spdlog;axcl_token;axcl_pcie_msg;axcl_pcie_dma'
 elif [[ "$INSTALL_DIR" == *"ax650"* ]]; then
     MSP_LIB_DIR="$REPO_ROOT/ax650n_bsp_sdk/msp/out/lib"
-    MSP_LIBS='ax_sys;ax_engine;ax_interpreter;dmadim'
+    MSP_LIBS='ax_sys;ax_engine;ax_interpreter;ax_dmadim'
 else
     MSP_LIB_DIR="$REPO_ROOT/ax650n_bsp_sdk/msp/out/lib"
     if [[ ! -d "$MSP_LIB_DIR" ]]; then
