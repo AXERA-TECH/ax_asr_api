@@ -14,10 +14,14 @@
 #include <filesystem>
 #include <fstream>
 #include <sstream>
+#include <set>
 #include <vector>
+#include <net/if.h>
 
 #include <fcntl.h>
+#include <ifaddrs.h>
 #include <unistd.h>
+#include <arpa/inet.h>
 
 #include "asr_server.hpp"
 #include "utils/logger.h"
@@ -154,6 +158,59 @@ bool has_bearer_prefix(const std::string& value) {
     return value.rfind(prefix, 0) == 0;
 }
 
+
+struct ListenAddress {
+    std::string ifname;
+    std::string ip;
+};
+
+bool is_valid_listen_ip(const std::string& ip) {
+    return !ip.empty() && ip != "0.0.0.0" && ip.rfind("127.", 0) != 0 && ip.rfind("169.254.", 0) != 0;
+}
+
+std::string format_listen_url(const std::string& ip, int port) {
+    return "http://" + ip + ":" + std::to_string(port) + ASR_ENDPOINT;
+}
+
+std::vector<ListenAddress> enumerate_listen_ipv4_addresses() {
+    std::vector<ListenAddress> addresses;
+    std::set<std::string> seen_ips;
+    struct ifaddrs* ifaddr = nullptr;
+
+    if (getifaddrs(&ifaddr) != 0) {
+        ALOGW("getifaddrs failed, cannot enumerate listen addresses");
+        return addresses;
+    }
+
+    for (struct ifaddrs* it = ifaddr; it != nullptr; it = it->ifa_next) {
+        if (it->ifa_addr == nullptr || it->ifa_name == nullptr)
+            continue;
+        if (it->ifa_addr->sa_family != AF_INET)
+            continue;
+        if ((it->ifa_flags & IFF_UP) == 0 || (it->ifa_flags & IFF_LOOPBACK) != 0)
+            continue;
+
+        char ip_buffer[INET_ADDRSTRLEN] = {0};
+        const auto* addr = reinterpret_cast<const struct sockaddr_in*>(it->ifa_addr);
+        if (inet_ntop(AF_INET, &addr->sin_addr, ip_buffer, sizeof(ip_buffer)) == nullptr)
+            continue;
+
+        std::string ip(ip_buffer);
+        if (!is_valid_listen_ip(ip) || !seen_ips.insert(ip).second)
+            continue;
+
+        addresses.push_back({it->ifa_name, ip});
+    }
+
+    freeifaddrs(ifaddr);
+    std::sort(addresses.begin(), addresses.end(),
+              [](const ListenAddress& lhs, const ListenAddress& rhs) {
+                  if (lhs.ifname == rhs.ifname)
+                      return lhs.ip < rhs.ip;
+                  return lhs.ifname < rhs.ifname;
+              });
+    return addresses;
+}
 }  // namespace
 
 ASRServer::~ASRServer() {
@@ -181,7 +238,17 @@ bool ASRServer::init(const ASRServerConfig& config) {
 }
 
 bool ASRServer::start(int port) {
-    ALOGI("Starting server on 0.0.0.0:%d", port);
+    const auto addresses = enumerate_listen_ipv4_addresses();
+    if (addresses.empty()) {
+        ALOGW("No non-loopback IPv4 address found, server will listen on 0.0.0.0:%d", port);
+    } else {
+        for (const auto& address : addresses) {
+            ALOGI("Available URL (%s): %s", address.ifname.c_str(),
+                  format_listen_url(address.ip, port).c_str());
+        }
+    }
+
+    ALOGI("Listening on 0.0.0.0:%d", port);
     const bool ok = srv_.listen("0.0.0.0", port);
     if (!ok) {
         ALOGE("Listen on port %d failed", port);

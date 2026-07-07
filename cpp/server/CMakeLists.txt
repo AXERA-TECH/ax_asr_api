@@ -12,6 +12,11 @@ add_executable(asr_server ${SERVER_SRCS})
 target_include_directories(asr_server PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../src)
 target_link_libraries(asr_server PUBLIC ax_asr_api PRIVATE ${MSP_LIBS} pthread dl)
 
+# GCC < 9 may require explicit linking of std::filesystem.
+if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 9.0)
+    target_link_libraries(asr_server PRIVATE stdc++fs)
+endif()
+
 # 安装到CMAKE_INSTALL_BINDIR
 install(TARGETS asr_server
         RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
