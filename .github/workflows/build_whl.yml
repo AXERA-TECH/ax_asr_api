@@ -4,29 +4,32 @@ on:
   release:
     types: [published]
   workflow_dispatch:
-    inputs:
-      platform:
-        description: 'Target platform'
-        type: choice
-        options: [ax650, ax630c, ax8850]
-        default: ax650
 
 jobs:
   build-aarch64:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        platform:
-          - { name: ax650,   chip: AX650,  bsp: ax650n_bsp_sdk, bsp_org: AXERA-TECH }
-          - { name: ax630c,  chip: AX630C, bsp: ax620e_bsp_sdk, bsp_org: AXERA-TECH }
-          - { name: ax8850,  chip: AX8850, bsp: axcl_bsp_sdk,   bsp_org: Abandon-ht }
+        include:
+          - platform: ax650
+            chip: AX650
+            bsp_repo: AXERA-TECH/ax650n_bsp_sdk
+            bsp_dir: ax650n_bsp_sdk
+          - platform: ax630c
+            chip: AX630C
+            bsp_repo: AXERA-TECH/ax620e_bsp_sdk
+            bsp_dir: ax620e_bsp_sdk
+          - platform: ax8850
+            chip: AX8850
+            bsp_repo: Abandon-ht/axcl_bsp_sdk
+            bsp_dir: axcl_bsp_sdk
 
     steps:
       - uses: actions/checkout@v4
 
       - name: Clone BSP SDK
         run: |
-          git clone https://github.com/${{ matrix.platform.bsp_org }}/${{ matrix.platform.bsp }}.git --depth=1
+          git clone https://github.com/${{ matrix.bsp_repo }}.git --depth=1 ${{ matrix.bsp_dir }}
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -50,13 +53,13 @@ jobs:
               bash build_whl.sh /ws/install/\$PLATFORM
             "
         env:
-          PLATFORM: ${{ matrix.platform.name }}
-          CHIP: ${{ matrix.platform.chip }}
+          PLATFORM: ${{ matrix.platform }}
+          CHIP: ${{ matrix.chip }}
 
       - name: Upload wheel artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ax_asr-${{ matrix.platform.name }}
+          name: ax_asr-${{ matrix.platform }}
           path: python/dist/*.whl
 
   upload-release:
