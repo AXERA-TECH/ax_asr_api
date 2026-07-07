@@ -17,10 +17,10 @@ elif [[ "$INSTALL_DIR" == *"ax650"* ]]; then
     MSP_LIB_DIR="$REPO_ROOT/ax650n_bsp_sdk/msp/out/lib"
     MSP_LIBS='ax_sys;ax_engine;ax_interpreter;ax_dmadim'
 elif [[ "$INSTALL_DIR" == *"ax630c"* ]]; then
-    MSP_LIB_DIR="$REPO_ROOT/ax620e_bsp_sdk/msp/out/arm64_glibc"
+    MSP_LIB_DIR="$REPO_ROOT/ax620e_bsp_sdk/msp/out/arm64_glibc/lib"
     MSP_LIBS='ax_sys;ax_engine;ax_interpreter'
 elif [[ "$INSTALL_DIR" == *"ax620q"* ]]; then
-    MSP_LIB_DIR="$REPO_ROOT/ax620e_bsp_sdk/msp/out/arm_uclibc"
+    MSP_LIB_DIR="$REPO_ROOT/ax620e_bsp_sdk/msp/out/arm_uclibc/lib"
     MSP_LIBS='ax_sys;ax_engine;ax_interpreter'
 else
     echo "ERROR: unknown platform in INSTALL_DIR: $INSTALL_DIR"
