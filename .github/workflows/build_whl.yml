@@ -24,6 +24,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Clone BSP SDK
+        run: |
+          git clone https://github.com/${{ matrix.platform.bsp_org }}/${{ matrix.platform.bsp }}.git --depth=1
+
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
 
@@ -34,9 +38,8 @@ jobs:
             arm64v8/python:3.10-slim \
             bash -c "
               apt-get update -qq &&
-              apt-get install -y -qq cmake build-essential git &&
+              apt-get install -y -qq cmake build-essential &&
               pip install pybind11 build numpy -q &&
-              git clone https://github.com/\$BSP_ORG/\$BSP_REPO.git --depth=1 &&
               mkdir -p build_\$PLATFORM && cd build_\$PLATFORM &&
               cmake ../cpp \
                 -DCHIP_\$CHIP=ON \
@@ -49,8 +52,6 @@ jobs:
         env:
           PLATFORM: ${{ matrix.platform.name }}
           CHIP: ${{ matrix.platform.chip }}
-          BSP_REPO: ${{ matrix.platform.bsp }}
-          BSP_ORG: ${{ matrix.platform.bsp_org }}
 
       - name: Upload wheel artifact
         uses: actions/upload-artifact@v4
