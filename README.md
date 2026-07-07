@@ -156,13 +156,27 @@ bash download_bsp.sh
   bash build_ax650.sh -DBUILD_SERVER=ON
   ```    
 
-## HTTP API
+## HTTP API（OpenAI 兼容）
 
 服务端默认提供以下接口:
+
 
 - `POST /v1/audio/transcriptions`
 - `GET /v1/models`
 - `GET /healthz`
+
+
+可直接使用 OpenAI 官方 Python SDK 调用：
+
+```python
+from openai import OpenAI
+
+client = OpenAI(base_url="http://<ip>:8080/v1", api_key="your_token")
+with open("demo.wav", "rb") as f:
+    transcript = client.audio.transcriptions.create(
+        model="sensevoice", file=f, language="zh")
+print(transcript.text)
+```
 
 ### 认证
 
