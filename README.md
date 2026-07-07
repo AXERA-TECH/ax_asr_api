@@ -20,6 +20,7 @@ C++ ASR API on Axera platforms
 - [编译](#编译)  
 - [HTTP API](#http-api)
 - [OpenAPI 描述](#openapi-描述)
+- [Python Binding](#python-binding)
 - [C-SDK](#c-sdk)
 - [测试](#测试)  
 - [性能表现](#性能表现)  
@@ -341,6 +342,58 @@ void AX_ASR_Free(char* result);
 - `AX_ASR_RunFile` 读取文件路径；`AX_ASR_RunPCM` 适合上层自行管理音频流
 - `AX_ASR_RunPCM` 的输入为单声道 `float` PCM，范围 `-1.0 ~ 1.0`
 - 返回文本由库内分配，调用方必须使用 `AX_ASR_Free`
+
+## Python Binding
+
+通过 pybind11 封装 `libax_asr_api.so`，提供 Pythonic 的 `AX_ASR` 类。
+
+### 构建
+
+```bash
+cd python
+pip install . --config-settings=cmake.define.AX_ASR_LIB_DIR=<install_dir>/lib
+```
+
+需要 `pybind11>=3.0` 和 CMake >= 3.13。
+
+### 快速开始
+
+```python
+from ax_asr import AX_ASR
+
+# 使用 context manager 自动管理生命周期
+with AX_ASR("sensevoice", "./models-ax650") as asr:
+    text = asr.transcribe_file("demo.wav", language="zh")
+    print(text)
+```
+
+### 核心接口
+
+```python
+class AX_ASR:
+    def __init__(self, model_type: str, model_path: Optional[str] = None):
+        """
+        model_type: whisper_tiny, whisper_base, whisper_small, whisper_turbo, sensevoice
+        model_path: 模型根目录，默认读取 AX_ASR_MODEL_PATH 环境变量
+        """
+
+    def transcribe_file(self, audio_path: str, language: str = "zh") -> str:
+        """转写音频文件，支持 .wav 和 .mp3"""
+
+    def transcribe_pcm(self, pcm: np.ndarray, sample_rate: int, language: str = "zh") -> str:
+        """转写 PCM float32 单声道音频 (numpy.ndarray, shape=(N,), range [-1.0, 1.0])"""
+
+    def close(self) -> None:
+        """释放 ASR handle，可多次调用"""
+```
+
+### 使用约束
+
+- `model_path` 传模型根目录，与 C-SDK 一致
+- `transcribe_file` 内部已处理音频加载和重采样
+- `transcribe_pcm` 接受 `(N,)` 形状的 float32 numpy 数组
+- C 层错误码自动转换为 Python `RuntimeError`
+- 同一个 `AX_ASR` 实例不建议并发调用；多并发请创建多个实例
 - 同一个 `AX_ASR_HANDLE` 不建议并发调用；如果需要多并发，请创建多个 handle
 
 ## 测试
@@ -438,6 +491,11 @@ WER(Word Error Rate)为词错误率，在私有数据集上测试
 ## 集成
 
 编译产物包含 include/ax_asr_api.h 和 lib/libax_asr_api.so
+
+Python 用户可直接安装 wheel 包：
+```bash
+pip install ax_asr-*.whl
+```
 
 ## 讨论
 

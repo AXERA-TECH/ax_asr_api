@@ -1,0 +1,22 @@
+{
+  "goal": "Python binding via pybind11 wrapping libax_asr_api.so, with AX_ASR class, packaged as whl",
+  "stack": "Python, C++, pybind11, CMake",
+  "base_branch": "main",
+  "branch": "feat/build-20260707-1323",
+  "iteration": 1,
+  "validation_command": "python -m pytest python/test/ -x -q",
+  "requirement_alignment": {
+    "target": "aarch64 only",
+    "binding": "pybind11",
+    "api_surface": "AX_ASR class with transcribe_file, transcribe_pcm, context manager",
+    "non_goals": "multi-platform wheels",
+    "first_iteration": "pybind11 binding layer + AX_ASR class + wheel build config"
+  },
+  "issues": [],
+  "rounds": [],
+  "pre_existing_changes": [],
+  "assumptions": [
+    "libax_asr_api.so available at build time via AX_ASR_LIB_DIR",
+    "pybind11 available via pip"
+  ]
+}
