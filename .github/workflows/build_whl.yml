@@ -49,7 +49,8 @@ jobs:
                 -DCHIP_\$CHIP=ON \
                 -DCMAKE_INSTALL_PREFIX=../install/\$PLATFORM \
                 -DCMAKE_BUILD_TYPE=Release &&
-              make -j$(nproc) ax_asr_api && cmake --install . &&
+              make -j$(nproc) ax_asr_api && mkdir -p ../install/$PLATFORM/lib && cp libax_asr_api.a ../install/$PLATFORM/lib/ &&
+              mkdir -p /ws/install/$PLATFORM/include && cp /ws/cpp/src/api/ax_asr_api.h /ws/install/$PLATFORM/include/ &&
               cd /ws/python &&
               bash build_whl.sh /ws/install/\$PLATFORM
             "
