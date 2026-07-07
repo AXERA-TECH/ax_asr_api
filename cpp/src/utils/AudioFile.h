@@ -28,6 +28,7 @@
 #include <cassert>
 #include <string>
 #include <cstring>
+#include <cstdint>
 #include <fstream>
 #include <unordered_map>
 #include <iterator>
