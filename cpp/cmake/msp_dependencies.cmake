@@ -1,16 +1,16 @@
 # bsp
 if(NOT BSP_MSP_DIR)
     if (CHIP_AX650)
-        set(BSP_MSP_DIR ${CMAKE_SOURCE_DIR}/ax650n_bsp_sdk/msp/out)
+        set(BSP_MSP_DIR ${CMAKE_SOURCE_DIR}/../ax650n_bsp_sdk/msp/out)
 
     elseif(CHIP_AX630C)
-        set(BSP_MSP_DIR ${CMAKE_SOURCE_DIR}/ax620e_bsp_sdk/msp/out/arm64_glibc)
+        set(BSP_MSP_DIR ${CMAKE_SOURCE_DIR}/../ax620e_bsp_sdk/msp/out/arm64_glibc)
 
     elseif(CHIP_AX620Q)
-        set(BSP_MSP_DIR ${CMAKE_SOURCE_DIR}/ax620e_bsp_sdk/msp/out/arm_uclibc)
+        set(BSP_MSP_DIR ${CMAKE_SOURCE_DIR}/../ax620e_bsp_sdk/msp/out/arm_uclibc)
 
     elseif(CHIP_AX8850)
-        set(BSP_MSP_DIR ${CMAKE_SOURCE_DIR}/axcl_bsp_sdk/out)
+        set(BSP_MSP_DIR ${CMAKE_SOURCE_DIR}/../axcl_bsp_sdk/out)
         list(APPEND MSP_INC_DIR ${BSP_MSP_DIR}/bsp)
     else()
         message(FATAL_ERROR "Unknown chip_type")

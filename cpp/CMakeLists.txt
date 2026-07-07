@@ -25,7 +25,7 @@ if (LOG_LEVEL_DEBUG)
 endif()
 
 # 设置安装路径
-set(CMAKE_INSTALL_PREFIX "${CMAKE_SOURCE_DIR}/install" CACHE PATH "Installation prefix")
+set(CMAKE_INSTALL_PREFIX "${CMAKE_SOURCE_DIR}/../install" CACHE PATH "Installation prefix")
 set(CMAKE_INSTALL_LIBDIR "lib")
 set(CMAKE_INSTALL_INCLUDEDIR "include")
 set(CMAKE_INSTALL_BINDIR ".")

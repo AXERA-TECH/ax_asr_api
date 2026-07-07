@@ -1,0 +1,37 @@
+{
+  "run_id": "refactor-20260707-113612",
+  "scope": "main.cpp, src/api/, src/asr/whisper.cpp, tests/, server/",
+  "optimization_target": "bug_fix_api_consistency",
+  "tech_stack": "C++17, CMake",
+  "commands": [
+    {
+      "name": "cppcheck",
+      "exit_code": 0,
+      "duration_ms": 14349,
+      "summary": "5 style warnings in scope files"
+    }
+  ],
+  "tests": {
+    "passed": null,
+    "total": null,
+    "failed": 0,
+    "note": "cross-compile targets require hardware"
+  },
+  "lint": {
+    "passed": true,
+    "errors": 0,
+    "warnings": 5,
+    "tool": "cppcheck"
+  },
+  "size": {
+    "available": true,
+    "metrics": {
+      "total_lines": 1836,
+      "main.cpp": 86,
+      "ax_asr_api.cpp": 212,
+      "whisper.cpp": 428,
+      "tests_combined": 335
+    }
+  },
+  "blocked_reason": null
+}

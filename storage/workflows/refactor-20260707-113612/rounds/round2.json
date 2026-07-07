@@ -1,0 +1,12 @@
+{
+  "opportunity_ids": [
+    "OPP-003",
+    "OPP-004"
+  ],
+  "files_modified": [
+    "src/asr/whisper.cpp"
+  ],
+  "summary": "Remove dead code: unused std::mutex mutex_ (L397), unused #include <mutex> (L10), unused locals n_samples (L290), n_mel (L292), self_kv_index (L347), this_kv_index (L350)",
+  "api_compatible": true,
+  "validation": "cppcheck re-run shows 0 unreadVariable warnings (down from 4), 0 remaining dead code"
+}

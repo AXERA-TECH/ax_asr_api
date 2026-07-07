@@ -1,8 +1,8 @@
 #!/bin/bash
 mkdir -p build_ax650 && cd build_ax650
-cmake ..  \
+cmake ../cpp  \
   -DCHIP_AX650=ON  \
-  -DCMAKE_TOOLCHAIN_FILE=../toolchains/aarch64-none-linux-gnu.toolchain.cmake \
+  -DCMAKE_TOOLCHAIN_FILE=../cpp/toolchains/aarch64-none-linux-gnu.toolchain.cmake \
   -DCMAKE_INSTALL_PREFIX=../install/ax650 \
   -DCMAKE_BUILD_TYPE=Release  \
   $@

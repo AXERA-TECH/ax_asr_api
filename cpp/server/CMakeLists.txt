@@ -9,7 +9,7 @@ file(GLOB SERVER_SRCS "*.cpp")
 add_executable(asr_server ${SERVER_SRCS})
     
 # 链接父目录生成的库
-target_include_directories(asr_server PRIVATE ${CMAKE_SOURCE_DIR}/src)
+target_include_directories(asr_server PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../src)
 target_link_libraries(asr_server PUBLIC ax_asr_api PRIVATE ${MSP_LIBS} pthread dl)
 
 # 安装到CMAKE_INSTALL_BINDIR

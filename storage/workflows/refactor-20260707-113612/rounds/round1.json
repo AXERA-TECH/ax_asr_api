@@ -1,0 +1,17 @@
+{
+  "opportunity_ids": [
+    "OPP-001",
+    "OPP-002"
+  ],
+  "files_modified": [
+    "main.cpp",
+    "tests/test_whisper_tiny.cpp",
+    "tests/test_whisper_base.cpp",
+    "tests/test_whisper_small.cpp",
+    "tests/test_whisper_turbo.cpp",
+    "tests/test_sensevoice.cpp"
+  ],
+  "summary": "Replace free(result) with AX_ASR_Free(result) in 6 files to match public API contract",
+  "api_compatible": true,
+  "validation": "grep free(result) returns empty across all modified files"
+}
