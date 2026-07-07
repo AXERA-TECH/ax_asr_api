@@ -37,6 +37,7 @@ jobs:
       - name: Build wheel (aarch64)
         run: |
           docker run --rm --platform linux/arm64 \
+            -e PLATFORM -e CHIP \
             -v ${{ github.workspace }}:/ws -w /ws \
             arm64v8/python:3.10-slim \
             bash -c "
