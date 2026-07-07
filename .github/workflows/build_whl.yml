@@ -1,0 +1,78 @@
+name: Build Python Wheel
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: 'Target platform'
+        type: choice
+        options: [ax650, ax630c, ax8850]
+        default: ax650
+
+jobs:
+  build-aarch64:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        platform:
+          - { name: ax650,   chip: AX650,  bsp: ax650n_bsp_sdk, bsp_org: AXERA-TECH }
+          - { name: ax630c,  chip: AX630C, bsp: ax620e_bsp_sdk, bsp_org: AXERA-TECH }
+          - { name: ax8850,  chip: AX8850, bsp: axcl_bsp_sdk,   bsp_org: Abandon-ht }
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Build wheel (aarch64)
+        run: |
+          docker run --rm --platform linux/arm64 \
+            -v ${{ github.workspace }}:/ws -w /ws \
+            arm64v8/python:3.10-slim \
+            bash -c "
+              apt-get update -qq &&
+              apt-get install -y -qq cmake build-essential git &&
+              pip install pybind11 build numpy -q &&
+              git clone https://github.com/\$BSP_ORG/\$BSP_REPO.git --depth=1 &&
+              mkdir -p build_\$PLATFORM && cd build_\$PLATFORM &&
+              cmake ../cpp \
+                -DCHIP_\$CHIP=ON \
+                -DCMAKE_INSTALL_PREFIX=../install/\$PLATFORM \
+                -DCMAKE_BUILD_TYPE=Release &&
+              make -j\$(nproc) ax_asr_api &&
+              cd /ws/python &&
+              bash build_whl.sh /ws/install/\$PLATFORM
+            "
+        env:
+          PLATFORM: ${{ matrix.platform.name }}
+          CHIP: ${{ matrix.platform.chip }}
+          BSP_REPO: ${{ matrix.platform.bsp }}
+          BSP_ORG: ${{ matrix.platform.bsp_org }}
+
+      - name: Upload wheel artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ax_asr-${{ matrix.platform.name }}
+          path: python/dist/*.whl
+
+  upload-release:
+    if: github.event_name == 'release'
+    needs: build-aarch64
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: ax_asr-*
+          path: wheels
+          merge-multiple: true
+
+      - name: Upload to Release
+        run: |
+          for whl in wheels/*.whl; do
+            gh release upload ${{ github.event.release.tag_name }} "$whl"
+          done
+        env:
+          GH_TOKEN: ${{ github.token }}

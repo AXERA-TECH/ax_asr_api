@@ -9,18 +9,23 @@ find_package(pybind11 CONFIG REQUIRED)
 # Build the pybind11 extension module
 pybind11_add_module(_ax_asr_core src/ax_asr/_binding.cpp)
 
-# Link against libax_asr_api
-# User supplies AX_ASR_LIB_DIR pointing to install/<platform>/lib
+# Link against libax_asr_api (static library)
 if(DEFINED AX_ASR_LIB_DIR)
     target_link_directories(_ax_asr_core PRIVATE ${AX_ASR_LIB_DIR})
 endif()
 target_link_libraries(_ax_asr_core PRIVATE ax_asr_api)
 
+# Link BSP dependencies required by libax_asr_api
+if(DEFINED MSP_LIB_DIR)
+    target_link_directories(_ax_asr_core PRIVATE ${MSP_LIB_DIR})
+endif()
+target_link_libraries(_ax_asr_core PRIVATE
+    ax_sys ax_engine ax_interpreter dmadim pthread dl)
+
 # Include the public API header
 if(DEFINED AX_ASR_INCLUDE_DIR)
     target_include_directories(_ax_asr_core PRIVATE ${AX_ASR_INCLUDE_DIR})
 else()
-    # Default: look relative to the repo install dir
     target_include_directories(_ax_asr_core PRIVATE
         ${CMAKE_SOURCE_DIR}/../../cpp/src/api)
 endif()
