@@ -4,4 +4,4 @@ axcl_bsp_sdk
 build*/
 install
 .vscode
-models-*
+models-*/storage
