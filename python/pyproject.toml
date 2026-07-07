@@ -24,7 +24,7 @@ dependencies = ["numpy>=1.20"]
 test = ["pytest>=7"]
 
 [tool.scikit-build]
-cmake.minimum-version = "3.13"
+cmake.version = ">=3.13"
 cmake.args = []
 
 [tool.scikit-build.wheel]
