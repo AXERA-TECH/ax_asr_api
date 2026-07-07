@@ -15,12 +15,13 @@ if(DEFINED AX_ASR_LIB_DIR)
 endif()
 target_link_libraries(_ax_asr_core PRIVATE ax_asr_api)
 
-# Link BSP dependencies required by libax_asr_api
+# Link BSP dependencies (passed as semicolon-separated MSP_LIBS)
 if(DEFINED MSP_LIB_DIR)
     target_link_directories(_ax_asr_core PRIVATE ${MSP_LIB_DIR})
 endif()
-target_link_libraries(_ax_asr_core PRIVATE
-    ax_sys ax_engine ax_interpreter dmadim pthread dl)
+if(DEFINED MSP_LIBS)
+    target_link_libraries(_ax_asr_core PRIVATE ${MSP_LIBS} pthread dl)
+endif()
 
 # Include the public API header
 if(DEFINED AX_ASR_INCLUDE_DIR)
