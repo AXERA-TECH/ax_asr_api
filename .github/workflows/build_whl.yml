@@ -34,7 +34,7 @@ jobs:
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
 
-      - name: Build wheel (aarch64)
+      - name: Build (aarch64)
         run: |
           docker run --rm --platform linux/arm64 \
             -e PLATFORM -e CHIP \
@@ -49,8 +49,12 @@ jobs:
                 -DCHIP_\$CHIP=ON \
                 -DCMAKE_INSTALL_PREFIX=../install/\$PLATFORM \
                 -DCMAKE_BUILD_TYPE=Release &&
-              make -j$(nproc) ax_asr_api && mkdir -p ../install/$PLATFORM/lib && cp libax_asr_api.a ../install/$PLATFORM/lib/ &&
-              mkdir -p /ws/install/$PLATFORM/include && cp /ws/cpp/src/api/ax_asr_api.h /ws/install/$PLATFORM/include/ &&
+              make -j\$(nproc) ax_asr_api main &&
+              mkdir -p ../install/\$PLATFORM/lib &&
+              cp libax_asr_api.a ../install/\$PLATFORM/lib/ &&
+              cp main ../install/\$PLATFORM/ &&
+              mkdir -p /ws/install/\$PLATFORM/include &&
+              cp /ws/cpp/src/api/ax_asr_api.h /ws/install/\$PLATFORM/include/ &&
               ln -sf /ws/README.md /ws/python/README.md && cd /ws/python &&
               bash build_whl.sh /ws/install/\$PLATFORM
             "
@@ -58,11 +62,15 @@ jobs:
           PLATFORM: ${{ matrix.platform }}
           CHIP: ${{ matrix.chip }}
 
-      - name: Upload wheel artifact
+      - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: ax_asr-${{ matrix.platform }}
-          path: python/dist/*.whl
+          path: |
+            install/${{ matrix.platform }}/lib/libax_asr_api.a
+            install/${{ matrix.platform }}/include/ax_asr_api.h
+            install/${{ matrix.platform }}/main
+            python/dist/*.whl
 
   upload-release:
     if: github.event_name == 'release'
@@ -78,8 +86,11 @@ jobs:
 
       - name: Upload to Release
         run: |
-          for whl in wheels/*.whl; do
-            gh release upload ${{ github.event.release.tag_name }} "$whl"
+          cd wheels
+          for f in ax_asr-*/*.whl ax_asr-*/main ax_asr-*/libax_asr_api.a ax_asr-*/ax_asr_api.h; do
+            if [ -f "$f" ]; then
+              gh release upload ${{ github.event.release.tag_name }} "$f"
+            fi
           done
         env:
           GH_TOKEN: ${{ github.token }}
