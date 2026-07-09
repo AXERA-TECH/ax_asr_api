@@ -53,13 +53,13 @@ jobs:
                 -DCMAKE_INSTALL_PREFIX=../install/\$PLATFORM \
                 -DCMAKE_BUILD_TYPE=Release &&
               make -j\$(nproc) ax_asr_api main &&
-              mkdir -p ../install/\$PLATFORM/lib &&
-              cp libax_asr_api.a ../install/\$PLATFORM/lib/ &&
-              cp main ../install/\$PLATFORM/ &&
-              mkdir -p /ws/install/\$PLATFORM/include &&
-              cp /ws/cpp/src/api/ax_asr_api.h /ws/install/\$PLATFORM/include/ &&
+              OUTDIR=/ws/release_\$PLATFORM && mkdir -p \$OUTDIR &&
+              cp libax_asr_api.a \$OUTDIR/\${PLATFORM}_libax_asr_api.a &&
+              cp main \$OUTDIR/\${PLATFORM}_main &&
+              cp /ws/cpp/src/api/ax_asr_api.h \$OUTDIR/\${PLATFORM}_ax_asr_api.h &&
               ln -sf /ws/README.md /ws/python/README.md && cd /ws/python &&
-              bash build_whl.sh /ws/install/\$PLATFORM
+              bash build_whl.sh /ws/install/\$PLATFORM &&
+              mv /ws/python/dist/*.whl \$OUTDIR/\${PLATFORM}_ax_asr-0.1.0-cp310-cp310-linux_aarch64.whl
             "
         env:
           PLATFORM: ${{ matrix.platform }}
@@ -69,11 +69,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ax_asr-${{ matrix.platform }}
-          path: |
-            install/${{ matrix.platform }}/lib/libax_asr_api.a
-            install/${{ matrix.platform }}/include/ax_asr_api.h
-            install/${{ matrix.platform }}/main
-            python/dist/*.whl
+          path: release_${{ matrix.platform }}/*
 
   upload-release:
     if: github.event_name == 'release'
@@ -90,7 +86,7 @@ jobs:
       - name: Upload to Release
         run: |
           find wheels -type f | while read f; do
-            gh release upload ${{ github.event.release.tag_name }} "$f"
+            gh release upload ${{ github.event.release.tag_name }} "$f" --clobber
           done
         env:
           GH_TOKEN: ${{ github.token }}
