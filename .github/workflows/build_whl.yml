@@ -86,11 +86,8 @@ jobs:
 
       - name: Upload to Release
         run: |
-          cd wheels
-          for f in ax_asr-*/*.whl ax_asr-*/main ax_asr-*/libax_asr_api.a ax_asr-*/ax_asr_api.h; do
-            if [ -f "$f" ]; then
-              gh release upload ${{ github.event.release.tag_name }} "$f"
-            fi
+          find wheels -type f | while read f; do
+            gh release upload ${{ github.event.release.tag_name }} "$f"
           done
         env:
           GH_TOKEN: ${{ github.token }}
