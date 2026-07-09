@@ -42,7 +42,7 @@ jobs:
           docker run --rm --platform linux/arm64 \
             -e PLATFORM -e CHIP \
             -v ${{ github.workspace }}:/ws -w /ws \
-            arm64v8/python:3.10-slim \
+            arm64v8/python:3.11-slim \
             bash -c "
               set -e &&
               apt-get update -qq &&
@@ -88,7 +88,7 @@ jobs:
 
       - name: Upload to Release
         run: |
-          find wheels -type f -name '*.tar.gz' | while read f; do
+          find wheels -type f \( -name '*.tar.gz' -o -name '*.whl' \) | while read f; do
             gh release upload ${{ github.event.release.tag_name }} "$f" --clobber
           done
         env:
