@@ -1,4 +1,5 @@
 # ax_asr_api
+[![Build](https://github.com/AXERA-TECH/ax_asr_api/actions/workflows/build_whl.yml/badge.svg)](https://github.com/AXERA-TECH/ax_asr_api/actions/workflows/build_whl.yml)
 C++ ASR API on Axera platforms
 
 支持平台:  
