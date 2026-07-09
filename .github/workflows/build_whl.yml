@@ -44,6 +44,7 @@ jobs:
             -v ${{ github.workspace }}:/ws -w /ws \
             arm64v8/python:3.10-slim \
             bash -c "
+              set -e &&
               apt-get update -qq &&
               apt-get install -y -qq cmake build-essential &&
               pip install pybind11 build numpy -q &&
@@ -53,13 +54,21 @@ jobs:
                 -DCMAKE_INSTALL_PREFIX=../install/\$PLATFORM \
                 -DCMAKE_BUILD_TYPE=Release &&
               make -j\$(nproc) ax_asr_api main &&
-              OUTDIR=/ws/release_\$PLATFORM && mkdir -p \$OUTDIR &&
-              cp libax_asr_api.a \$OUTDIR/\${PLATFORM}_libax_asr_api.a &&
-              cp main \$OUTDIR/\${PLATFORM}_main &&
-              cp /ws/cpp/src/api/ax_asr_api.h \$OUTDIR/\${PLATFORM}_ax_asr_api.h &&
+              mkdir -p ../install/\$PLATFORM/lib &&
+              cp libax_asr_api.a ../install/\$PLATFORM/lib/ &&
+              cp main ../install/\$PLATFORM/ &&
+              mkdir -p /ws/install/\$PLATFORM/include &&
+              cp /ws/cpp/src/api/ax_asr_api.h /ws/install/\$PLATFORM/include/ &&
               ln -sf /ws/README.md /ws/python/README.md && cd /ws/python &&
               bash build_whl.sh /ws/install/\$PLATFORM &&
-              mv /ws/python/dist/*.whl \$OUTDIR/\${PLATFORM}_ax_asr-0.1.0-cp310-cp310-linux_aarch64.whl
+              OUTDIR=/ws/release_\$PLATFORM && mkdir -p \$OUTDIR &&
+              cp /ws/install/\$PLATFORM/main \$OUTDIR/\${PLATFORM}_main &&
+              cp /ws/install/\$PLATFORM/lib/libax_asr_api.a \$OUTDIR/\${PLATFORM}_libax_asr_api.a &&
+              cp /ws/install/\$PLATFORM/include/ax_asr_api.h \$OUTDIR/\${PLATFORM}_ax_asr_api.h &&
+              for whl in /ws/python/dist/*.whl; do
+                base=\$(basename \"\$whl\")
+                cp \"\$whl\" \"\$OUTDIR/\${PLATFORM}_\${base}\"
+              done
             "
         env:
           PLATFORM: ${{ matrix.platform }}
