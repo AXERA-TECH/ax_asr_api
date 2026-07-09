@@ -54,21 +54,15 @@ jobs:
                 -DCMAKE_INSTALL_PREFIX=../install/\$PLATFORM \
                 -DCMAKE_BUILD_TYPE=Release &&
               make -j\$(nproc) ax_asr_api main &&
-              mkdir -p ../install/\$PLATFORM/lib &&
+              mkdir -p ../install/\$PLATFORM/lib ../install/\$PLATFORM/include &&
               cp libax_asr_api.a ../install/\$PLATFORM/lib/ &&
               cp main ../install/\$PLATFORM/ &&
-              mkdir -p /ws/install/\$PLATFORM/include &&
-              cp /ws/cpp/src/api/ax_asr_api.h /ws/install/\$PLATFORM/include/ &&
+              cp /ws/cpp/src/api/ax_asr_api.h ../install/\$PLATFORM/include/ &&
               ln -sf /ws/README.md /ws/python/README.md && cd /ws/python &&
               bash build_whl.sh /ws/install/\$PLATFORM &&
+              cp /ws/python/dist/*.whl /ws/install/\$PLATFORM/ &&
               OUTDIR=/ws/release_\$PLATFORM && mkdir -p \$OUTDIR &&
-              cp /ws/install/\$PLATFORM/main \$OUTDIR/\${PLATFORM}_main &&
-              cp /ws/install/\$PLATFORM/lib/libax_asr_api.a \$OUTDIR/\${PLATFORM}_libax_asr_api.a &&
-              cp /ws/install/\$PLATFORM/include/ax_asr_api.h \$OUTDIR/\${PLATFORM}_ax_asr_api.h &&
-              for whl in /ws/python/dist/*.whl; do
-                base=\$(basename \"\$whl\")
-                cp \"\$whl\" \"\$OUTDIR/\${PLATFORM}_\${base}\"
-              done
+              tar -czf \$OUTDIR/ax_asr_\${PLATFORM}.tar.gz -C /ws/install/\$PLATFORM .
             "
         env:
           PLATFORM: ${{ matrix.platform }}
@@ -94,7 +88,7 @@ jobs:
 
       - name: Upload to Release
         run: |
-          find wheels -type f | while read f; do
+          find wheels -type f -name '*.tar.gz' | while read f; do
             gh release upload ${{ github.event.release.tag_name }} "$f" --clobber
           done
         env:
