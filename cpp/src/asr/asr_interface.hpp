@@ -20,4 +20,10 @@ public:
     virtual bool init(AX_ASR_TYPE_E asr_type, const std::string& model_path) = 0;
     virtual void uninit(void) = 0;
     virtual bool run(const std::vector<float>& audio_data, int sample_rate, const std::string& language, std::string& text_result) = 0;
+
+    // Streaming API (optional — default no-op). Override in sensevoice for real streaming.
+    virtual void stream_init() {}
+    virtual void stream_feed(const std::vector<float>& pcm_chunk, int sample_rate) {}
+    virtual bool stream_result(std::string& partial_text) { return false; }
+    virtual void stream_reset() {}
 };
