@@ -337,6 +337,106 @@ private:
     std::vector<float> ctc_logits_;
     int encoder_out_lens_;
     std::vector<std::string> tokens_;
+
+    // ---- Streaming state ----
+    std::vector<float> stream_features_;   // accumulated fbank features
+    int stream_total_frames_ = 0;          // total frames accumulated
+    std::string stream_partial_text_;      // latest partial result
+    std::mutex stream_mutex_;
+
+    void stream_init(void) {
+        std::lock_guard<std::mutex> lock(stream_mutex_);
+        init_fbank_();
+        stream_features_.clear();
+        stream_total_frames_ = 0;
+        stream_partial_text_.clear();
+    }
+
+    void stream_feed(const std::vector<float>& pcm_chunk, int sample_rate) {
+        if (pcm_chunk.empty()) return;
+
+        // Resample to 16kHz, convert to int16
+        auto resampled = utils::resample(pcm_chunk, sample_rate, sample_rate_);
+        std::vector<float> buf_int16(resampled.size());
+        for (size_t i = 0; i < resampled.size(); ++i)
+            buf_int16[i] = resampled[i] * 32768.0f;
+
+        // Feed to fbank (accumulating)
+        std::vector<float> chunk_feats;
+        int chunk_feat_len = 0;
+        preprocess_(buf_int16, true, chunk_feats, chunk_feat_len);
+
+        if (chunk_feat_len <= 0) return;
+
+        std::lock_guard<std::mutex> lock(stream_mutex_);
+        stream_features_.insert(stream_features_.end(), chunk_feats.begin(), chunk_feats.end());
+        stream_total_frames_ += chunk_feat_len;
+
+        // Run CTC inference on accumulated features (sliding window)
+        run_stream_inference_();
+    }
+
+    void run_stream_inference_(void) {
+        if (stream_total_frames_ == 0) return;
+
+        int slice_len = max_seq_len_;
+        int total = stream_total_frames_;
+        int slice_num = std::max(1, (int)std::ceil(total * 1.0f / slice_len));
+
+        std::vector<int> asr_res;
+
+        for (int i = 0; i < slice_num; i++) {
+            int slice_start, slice_end;
+            if (i == 0) {
+                slice_start = 0;
+                slice_end = std::min(slice_len, total);
+            } else {
+                slice_start = i * slice_len - padding_;
+                slice_end = std::min((i + 1) * slice_len - padding_, total);
+            }
+            if (slice_start >= total) break;
+
+            int actual_seq_len = slice_end - slice_start;
+            std::fill(sub_feat_.begin(), sub_feat_.end(), 0.0f);
+            memcpy(sub_feat_.data(),
+                   stream_features_.data() + slice_start * feature_dim_,
+                   actual_seq_len * feature_dim_ * sizeof(float));
+
+            sequence_mask_(actual_seq_len);
+
+            int lang_token = 0; // auto
+            encoder_.set_input(0, sub_feat_.data());
+            encoder_.set_input(1, mask_.data());
+            encoder_.set_input(2, &lang_token);
+
+            int ret = encoder_.run();
+            if (0 != ret) return;
+
+            encoder_.get_output(0, ctc_logits_.data());
+            encoder_.get_output(1, &encoder_out_lens_);
+
+            auto token_int = postprocess_(ctc_logits_, encoder_out_lens_);
+            asr_res.insert(asr_res.end(), token_int.begin(), token_int.end());
+        }
+
+        stream_partial_text_.clear();
+        stream_partial_text_.reserve(256);
+        for (auto i : asr_res) {
+            if (i >= 0 && i < (int)tokens_.size())
+                stream_partial_text_.append(tokens_[i]);
+        }
+    }
+
+    bool stream_result(std::string& partial_text) {
+        std::lock_guard<std::mutex> lock(stream_mutex_);
+        if (stream_partial_text_.empty()) return false;
+        partial_text = stream_partial_text_;
+        return true;
+    }
+
+    void stream_reset(void) {
+        stream_init();
+    }
 };
 
 Sensevoice::Sensevoice():
@@ -358,4 +458,20 @@ void Sensevoice::uninit(void) {
 
 bool Sensevoice::run(const std::vector<float>& audio_data, int sample_rate, const std::string& language, std::string& text_result) {
     return impl_->run(audio_data, sample_rate, language, text_result);
+}
+
+void Sensevoice::stream_init() {
+    impl_->stream_init();
+}
+
+void Sensevoice::stream_feed(const std::vector<float>& pcm_chunk, int sample_rate) {
+    impl_->stream_feed(pcm_chunk, sample_rate);
+}
+
+bool Sensevoice::stream_result(std::string& partial_text) {
+    return impl_->stream_result(partial_text);
+}
+
+void Sensevoice::stream_reset() {
+    impl_->stream_reset();
 }

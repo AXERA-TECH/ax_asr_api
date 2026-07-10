@@ -22,6 +22,10 @@ public:
     bool init(AX_ASR_TYPE_E asr_type, const std::string& model_path);
     void uninit(void);
     bool run(const std::vector<float>& audio_data, int sample_rate, const std::string& language, std::string& text_result);
+    void stream_init();
+    void stream_feed(const std::vector<float>& pcm_chunk, int sample_rate);
+    bool stream_result(std::string& partial_text);
+    void stream_reset();
 
 private:    
     class Impl;

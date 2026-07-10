@@ -10,6 +10,8 @@
 #include "api/ax_asr_api.h"
 #include "asr/asr_factory.hpp"
 #include "utils/logger.h"
+
+static std::string g_stream_g_stream_partial_copy_;
 #include "utils/AudioLoader.hpp"
 
 #include <string.h>
@@ -205,6 +207,43 @@ AX_ASR_API int AX_ASR_RunPCM(AX_ASR_HANDLE handle,
 
 AX_ASR_API void AX_ASR_Free(char* result) {
     free(result);
+}
+
+AX_ASR_API int AX_ASR_StreamInit(AX_ASR_HANDLE handle) {
+    if (!handle) return AX_ASR_ERR_INVALID_ARGUMENT;
+    auto interface = static_cast<ASRInterface*>(handle);
+    interface->stream_init();
+    return AX_ASR_SUCCESS;
+}
+
+AX_ASR_API int AX_ASR_StreamFeed(AX_ASR_HANDLE handle,
+    float* pcm_data, int num_samples, int sample_rate) {
+    if (!handle || !pcm_data || num_samples <= 0 || sample_rate <= 0)
+        return AX_ASR_ERR_INVALID_ARGUMENT;
+    auto interface = static_cast<ASRInterface*>(handle);
+    std::vector<float> chunk(pcm_data, pcm_data + num_samples);
+    interface->stream_feed(chunk, sample_rate);
+    return AX_ASR_SUCCESS;
+}
+
+AX_ASR_API int AX_ASR_StreamResult(AX_ASR_HANDLE handle, const char** result) {
+    if (!handle || !result) return AX_ASR_ERR_INVALID_ARGUMENT;
+    auto interface = static_cast<ASRInterface*>(handle);
+    static thread_local std::string partial;
+    if (!interface->stream_result(partial)) {
+        *result = nullptr;
+        return AX_ASR_ERR_STREAM_NOT_SUPPORTED;
+    }
+    partial_copy_ = partial;  // stable pointer
+    *result = partial_copy_.c_str();
+    return AX_ASR_SUCCESS;
+}
+
+AX_ASR_API int AX_ASR_StreamReset(AX_ASR_HANDLE handle) {
+    if (!handle) return AX_ASR_ERR_INVALID_ARGUMENT;
+    auto interface = static_cast<ASRInterface*>(handle);
+    interface->stream_reset();
+    return AX_ASR_SUCCESS;
 }
 
 #ifdef __cplusplus

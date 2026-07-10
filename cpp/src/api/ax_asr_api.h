@@ -22,7 +22,8 @@ enum AX_ASR_STATUS_E {
     AX_ASR_ERR_INIT_FAILED = -2,
     AX_ASR_ERR_AUDIO_LOAD_FAILED = -3,
     AX_ASR_ERR_RUN_FAILED = -4,
-    AX_ASR_ERR_NO_MEMORY = -5
+    AX_ASR_ERR_NO_MEMORY = -5,
+    AX_ASR_ERR_STREAM_NOT_SUPPORTED = -6
 };
 
 // Supported asr
@@ -129,6 +130,39 @@ AX_ASR_API int AX_ASR_RunPCM(AX_ASR_HANDLE handle,
  * @param result Buffer returned through the result output parameter.
  */
 AX_ASR_API void AX_ASR_Free(char* result);
+
+/**
+ * @brief Initialize streaming recognition state. 
+ * Must be called before AX_ASR_StreamFeed.
+ * Clears accumulated audio features and resets partial results.
+ */
+AX_ASR_API int AX_ASR_StreamInit(AX_ASR_HANDLE handle);
+
+/**
+ * @brief Feed a chunk of audio data for streaming recognition.
+ * Accumulates features and runs incremental CTC inference.
+ * 
+ * @param handle ASR context handle
+ * @param pcm_data Float32 mono PCM data, range [-1.0, 1.0]
+ * @param num_samples Number of samples in this chunk
+ * @param sample_rate Sample rate of the audio (resampled to 16kHz internally)
+ */
+AX_ASR_API int AX_ASR_StreamFeed(AX_ASR_HANDLE handle,
+    float* pcm_data, int num_samples, int sample_rate);
+
+/**
+ * @brief Get the current partial streaming result.
+ * The returned string is allocated internally and freed on next StreamFeed or StreamReset.
+ * 
+ * @param handle ASR context handle
+ * @param result Pointer to receive partial transcription text. DO NOT free externally.
+ */
+AX_ASR_API int AX_ASR_StreamResult(AX_ASR_HANDLE handle, const char** result);
+
+/**
+ * @brief Reset streaming state (equivalent to StreamInit).
+ */
+AX_ASR_API int AX_ASR_StreamReset(AX_ASR_HANDLE handle);
 
 #ifdef __cplusplus
 }
