@@ -67,7 +67,10 @@ jobs:
               ln -sf /ws/README.md /ws/python/README.md && cd /ws/python &&
               bash build_whl.sh /ws/install/\$PLATFORM &&
               mkdir -p /ws/dist_\$PLATFORM &&
-              cp /ws/python/dist/*.whl /ws/dist_\$PLATFORM/
+              for f in /ws/python/dist/*.whl; do
+                base=\$(basename \"\$f\" .whl)
+                cp \"\$f\" \"/ws/dist_\$PLATFORM/\${base}_\$PLATFORM.whl\"
+              done
             "
         env:
           PLATFORM: ${{ matrix.platform.name }}
