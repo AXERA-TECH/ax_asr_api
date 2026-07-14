@@ -28,6 +28,7 @@
 
 // pImpl
 class Sensevoice::Impl {
+    friend class Sensevoice;
 public:
     bool init(AX_ASR_TYPE_E asr_type, const std::string& model_path) {
         std::string spec_model_path = model_path + "/sensevoice.axmodel";

@@ -13,16 +13,17 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        include:
-          - platform: ax650
+        python_version: ["3.10", "3.11", "3.12", "3.13"]
+        platform:
+          - name: ax650
             chip: AX650
             bsp_repo: AXERA-TECH/ax650n_bsp_sdk
             bsp_dir: ax650n_bsp_sdk
-          - platform: ax630c
+          - name: ax630c
             chip: AX630C
             bsp_repo: AXERA-TECH/ax620e_bsp_sdk
             bsp_dir: ax620e_bsp_sdk
-          - platform: ax8850
+          - name: ax8850
             chip: AX8850
             bsp_repo: Abandon-ht/axcl_bsp_sdk
             bsp_dir: axcl_bsp_sdk
@@ -30,9 +31,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Set artifact slug
+        id: slug
+        run: |
+          echo "artifact=ax_asr-${{ matrix.platform.name }}-cp$(echo ${{ matrix.python_version }} | tr -d '.')" >> $GITHUB_OUTPUT
+
       - name: Clone BSP SDK
         run: |
-          git clone https://github.com/${{ matrix.bsp_repo }}.git --depth=1 ${{ matrix.bsp_dir }}
+          git clone https://github.com/${{ matrix.platform.bsp_repo }}.git --depth=1 ${{ matrix.platform.bsp_dir }}
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -42,7 +48,7 @@ jobs:
           docker run --rm --platform linux/arm64 \
             -e PLATFORM -e CHIP \
             -v ${{ github.workspace }}:/ws -w /ws \
-            arm64v8/python:3.11-slim \
+            arm64v8/python:${{ matrix.python_version }}-slim \
             bash -c "
               set -e &&
               apt-get update -qq &&
@@ -60,19 +66,21 @@ jobs:
               cp /ws/cpp/src/api/ax_asr_api.h ../install/\$PLATFORM/include/ &&
               ln -sf /ws/README.md /ws/python/README.md && cd /ws/python &&
               bash build_whl.sh /ws/install/\$PLATFORM &&
-              cp /ws/python/dist/*.whl /ws/install/\$PLATFORM/ &&
-              OUTDIR=/ws/release_\$PLATFORM && mkdir -p \$OUTDIR &&
-              tar -czf \$OUTDIR/ax_asr_\${PLATFORM}.tar.gz -C /ws/install/\$PLATFORM .
+              mkdir -p /ws/dist_\$PLATFORM &&
+              for f in /ws/python/dist/*.whl; do
+                base=\$(basename \"\$f\" .whl)
+                cp \"\$f\" \"/ws/dist_\$PLATFORM/\${base}_\$PLATFORM.whl\"
+              done
             "
         env:
-          PLATFORM: ${{ matrix.platform }}
-          CHIP: ${{ matrix.chip }}
+          PLATFORM: ${{ matrix.platform.name }}
+          CHIP: ${{ matrix.platform.chip }}
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ax_asr-${{ matrix.platform }}
-          path: release_${{ matrix.platform }}/*
+          name: ${{ steps.slug.outputs.artifact }}
+          path: dist_${{ matrix.platform.name }}/*
 
   upload-release:
     if: github.event_name == 'release'
@@ -88,7 +96,7 @@ jobs:
 
       - name: Upload to Release
         run: |
-          find wheels -type f \( -name '*.tar.gz' -o -name '*.whl' \) | while read f; do
+          find wheels -type f -name '*.whl' | while read f; do
             gh release upload ${{ github.event.release.tag_name }} "$f" --clobber
           done
         env:

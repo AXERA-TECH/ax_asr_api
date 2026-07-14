@@ -11,7 +11,7 @@
 #include "asr/asr_factory.hpp"
 #include "utils/logger.h"
 
-static std::string g_stream_g_stream_partial_copy_;
+static std::string partial_copy_;
 #include "utils/AudioLoader.hpp"
 
 #include <string.h>
