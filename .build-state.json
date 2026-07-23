@@ -1,22 +1,59 @@
 {
-  "goal": "Python binding via pybind11 wrapping libax_asr_api.so, with AX_ASR class, packaged as whl",
+  "goal": "Create setup.py that builds platform-specific aarch64 wheels via --chip parameter, auto-compiles pybind11 extension with CMake, supports --bsp-dir override, and produces correctly tagged wheels",
   "stack": "Python, C++, pybind11, CMake",
   "base_branch": "main",
-  "branch": "feat/build-20260707-1323",
+  "branch": "feat/build-20260723-1647",
   "iteration": 1,
   "validation_command": "python -m pytest python/test/ -x -q",
   "requirement_alignment": {
-    "target": "aarch64 only",
-    "binding": "pybind11",
-    "api_surface": "AX_ASR class with transcribe_file, transcribe_pcm, context manager",
-    "non_goals": "multi-platform wheels",
-    "first_iteration": "pybind11 binding layer + AX_ASR class + wheel build config"
+    "target": "aarch64 platforms: ax650, ax630c, ax620q, ax8850",
+    "install_method": "Platform-specific wheels per chip",
+    "chip_spec": "Command-line parameter --chip=ax650",
+    "file_scope": "python/setup.py only",
+    "build_scope": "Full build: find libax_asr_api.a + BSP libs -> CMake compile -> package wheel",
+    "bsp_paths": "Default relative paths per chip, --bsp-dir override",
+    "wheel_naming": "Local version label: ax_asr-0.1.1+ax650-cp311-cp311-linux_aarch64.whl",
+    "python_version": "Build for current Python version, cp-specific ABI tag",
+    "non_goals": "multi-platform wheels, pip auto-detect platform",
+    "first_iteration": "Complete setup.py with --chip, --bsp-dir support"
   },
-  "issues": [],
-  "rounds": [],
-  "pre_existing_changes": [],
+  "issues": [
+    {
+      "number": 8,
+      "title": "feat[1]: setup.py with --chip platform selection for aarch64 wheel builds",
+      "iteration": 1,
+      "acceptance_checks": [
+        "python setup.py bdist_wheel --chip=ax650 builds wheel with +ax650 label",
+        "python setup.py bdist_wheel --chip=ax630c builds wheel with +ax630c label",
+        "python setup.py bdist_wheel --chip=ax8850 --bsp-dir=/custom/path overrides default BSP dir",
+        "Unknown chip raises clear error",
+        "Wheel includes correct platform .so",
+        "Wheel uses cp-specific Python version tag"
+      ]
+    }
+  ],
+  "rounds": [
+    {
+      "iteration": 1,
+      "issue": 8,
+      "commit": "ce6fb0d",
+      "test_status": "pass (4 passed, 3 skipped)",
+      "files_changed": [
+        "python/setup.py"
+      ],
+      "summary": "Rewrote setup.py with ChipBdistWheel command supporting --chip/--bsp-dir"
+    }
+  ],
+  "pre_existing_changes": [
+    " python/src/ax_asr/recognizer.py (modified, unrelated)",
+    "python/setup.py (untracked, target file)"
+  ],
   "assumptions": [
-    "libax_asr_api.so available at build time via AX_ASR_LIB_DIR",
-    "pybind11 available via pip"
-  ]
+    "libax_asr_api.a available at install/<chip>/lib/",
+    "BSP SDK available at relative paths (download_bsp.sh run first)",
+    "pybind11 available via pip",
+    "CMake >= 3.13 available"
+  ],
+  "pr_url": "https://github.com/AXERA-TECH/ax_asr_api/pull/9",
+  "status": "complete"
 }
