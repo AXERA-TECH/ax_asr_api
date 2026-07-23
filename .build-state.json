@@ -32,7 +32,18 @@
       ]
     }
   ],
-  "rounds": [],
+  "rounds": [
+    {
+      "iteration": 1,
+      "issue": 8,
+      "commit": "ce6fb0d",
+      "test_status": "pass (4 passed, 3 skipped)",
+      "files_changed": [
+        "python/setup.py"
+      ],
+      "summary": "Rewrote setup.py with ChipBdistWheel command supporting --chip/--bsp-dir"
+    }
+  ],
   "pre_existing_changes": [
     " python/src/ax_asr/recognizer.py (modified, unrelated)",
     "python/setup.py (untracked, target file)"
