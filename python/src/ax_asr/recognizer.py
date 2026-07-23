@@ -55,7 +55,7 @@ class AX_ASR:
 
         from ._ax_asr_core import AsrType, init as _init
 
-        native_type = getattr(AsrType, _MODEL_TYPES[model_type].upper())
+        native_type = _MODEL_TYPES[model_type]
         self._handle = _init(native_type, self._model_path)
 
     def __enter__(self) -> AX_ASR:
@@ -104,7 +104,7 @@ class AX_ASR:
             raise ValueError("PCM data must be 1-dimensional")
         from ._ax_asr_core import run_pcm as _run_pcm
 
-        return _run_pcm(self._handle, pcm, sample_rate, language)        return _run_pcm(self._handle, pcm, sample_rate, language)
+        return _run_pcm(self._handle, pcm, sample_rate, language)
 
     def stream_init(self) -> None:
         """Initialize streaming recognition state.

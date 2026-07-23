@@ -53,5 +53,7 @@
     "BSP SDK available at relative paths (download_bsp.sh run first)",
     "pybind11 available via pip",
     "CMake >= 3.13 available"
-  ]
+  ],
+  "pr_url": "https://github.com/AXERA-TECH/ax_asr_api/pull/9",
+  "status": "complete"
 }
